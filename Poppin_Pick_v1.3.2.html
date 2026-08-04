@@ -1,0 +1,132 @@
+
+<!doctype html><html lang="ja"><head><meta charset="utf-8">
+<title>Poppin' Pick</title>
+<style>
+body{font-family:sans-serif;background:#defcff;padding:20px}
+.box{max-width:480px;margin:auto;background:#fff;padding:20px;border-radius:12px}
+.row{margin:6px 0}button{width:100%;padding:10px;margin-top:8px}
+#history{white-space:pre-wrap;border:1px solid #ccc;padding:8px;margin-top:10px}
+</style></head><body><div class="box">
+<h2>🎈Poppin' Pick</h2>
+企画名<input id="title"><br><br>
+抽選数<select id="count"><option >1</option><option selected>2</option><option >3</option><option >4</option><option >5</option><option >6</option><option >7</option><option >8</option><option >9</option><option >10</option></select>
+<div id="checks"></div>
+<button onclick="draw()">🎲 PICK!</button>
+<button onclick="copyTxt()">📋 履歴をコピー</button>
+<button onclick="exportTxt()">📄 履歴を保存</button>
+<button onclick="clearHistory()">履歴をクリア</button>
+<div id="result">---</div>
+<h3>履歴</h3><div id="history"></div>
+</div>
+<script>
+const KEY="rg3";
+let current=[],history=[];
+for(let i=1;i<=10;i++){
+ document.getElementById("checks").innerHTML+=`<div class=row><label><input type=checkbox id=c${i} checked></label> <input id=n${i} value="Sample ${i}" style="width:220px"></div>`;
+}
+const title=document.getElementById("title"),count=document.getElementById("count"),historyDiv=document.getElementById("history"),result=document.getElementById("result");
+function now(){let d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function saveState(){
+ let s={title:title.value,count:count.value,checks:[],names:[],history};
+ for(let i=1;i<=10;i++)s.checks.push(document.getElementById("c"+i).checked);
+ for(let i=1;i<=10;i++)s.names.push(document.getElementById("n"+i).value);
+ localStorage.setItem(KEY,JSON.stringify(s));
+}
+function load(){
+ let raw=localStorage.getItem(KEY);
+ if(raw){
+  let s=JSON.parse(raw);
+  title.value=s.title||"";count.value=s.count||2;
+  if(s.checks)s.checks.forEach((v,i)=>document.getElementById("c"+(i+1)).checked=v);
+  if(s.names)s.names.forEach((v,i)=>document.getElementById("n"+(i+1)).value=v);
+  history=s.history||[];
+ }
+ render();
+}
+function draw(){
+ let p=[];
+ for(let i=1;i<=10;i++) if(document.getElementById("c"+i).checked) p.push(document.getElementById("n"+i).value);
+ let n=parseInt(count.value);
+ if(p.length<n){alert("抽選対象不足");return;}
+ for(let i=p.length-1;i>0;i--){
+   let j=Math.floor(Math.random()*(i+1));
+   [p[i],p[j]]=[p[j],p[i]];
+ }
+ current=p.slice(0,n);
+ result.innerHTML=current.join("<br>");
+ history.push({date:now(),title:title.value||"Poppin' Pick",result:[...current]});
+ saveState();
+ render();
+}
+function saveResult(){
+ if(!current.length){alert("先にガチャ");return;}
+ history.push({date:now(),title:title.value||"Poppin' Pick",result:[...current]});
+ saveState();render();
+}
+function render(){
+ if(!history.length){historyDiv.textContent="履歴なし";return;}
+ let t="";
+ history.forEach(h=>{
+  t+=h.date+" "+h.title+"\n"+h.result.join(", ")+"\n\n";
+ });
+ historyDiv.textContent=t;
+}
+
+function buildTxt(){
+ if(!history.length)return "";
+ let out="",ld="",lt="";
+ history.forEach(h=>{
+   if(h.date!==ld){
+      if(out)out+="\r\n";
+      out+=h.date+"\r\n\r\n";
+      ld=h.date; lt="";
+   }
+   if(h.title!==lt){
+      out+=h.title+"\r\n\r\n";
+      lt=h.title;
+   }
+   out+=h.result.join("\r\n")+"\r\n\r\n";
+ });
+ return out;
+}
+
+async function copyTxt(){
+ if(!history.length){alert("履歴はありません。");return;}
+ try{
+   await navigator.clipboard.writeText(buildTxt());
+   alert("履歴をクリップボードにコピーしました！");
+ }catch(e){
+   alert("履歴をコピーできませんでした。");
+ }
+}
+
+function exportTxt(){
+ if(!history.length){alert("履歴はありません。");return;}
+ let out=buildTxt();
+ let blob=new Blob([out],{type:"text/plain;charset=utf-8"});
+ let a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download=(title.value||"RuruGacha")+".txt";
+ a.click();
+ URL.revokeObjectURL(a.href);
+}
+
+function clearHistory(){
+ if(!history.length){
+   alert("履歴はありません。");
+   return;
+ }
+ if(!confirm("履歴をすべて削除しますか？")){
+   return;
+ }
+ history=[];
+ current=[];
+ result.innerHTML="---";
+ saveState();
+ render();
+}
+
+document.addEventListener("change",saveState);
+document.addEventListener("input",saveState);
+load();
+</script></body></html>
