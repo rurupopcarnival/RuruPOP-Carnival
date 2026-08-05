@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>BingoCard | Rurupop Carnival</title>
+<style>
+  :root{
+    --paper:#fff7e8;
+    --paper-deep:#ffe8bd;
+    --red:#e5473c;
+    --red-deep:#cf2f27;
+    --red-ink:#7c2219;
+    --gold:#ffcb3f;
+    --gold-deep:#f2a300;
+    --cream:#fffdf7;
+    --ink:#3b2c22;
+    --ink-soft:#8a7565;
+    --line:#f4d9a4;
+    --line-soft:#fbecd0;
+    --danger:#e2586b;
+    --danger-bg:#fdeaee;
+    --ok:#3fae83;
+    --radius-lg:22px;
+    --radius-md:14px;
+    --radius-sm:9px;
+    --shadow-soft:0 6px 18px rgba(207,47,39,0.14);
+    --shadow-pop:0 10px 26px rgba(242,163,0,0.32);
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:"Hiragino Maru Gothic ProN","Yu Gothic",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 8% 6%, #fffdf5 0%, transparent 45%),
+      radial-gradient(circle at 96% 0%, #ffe4b8 0%, transparent 40%),
+      linear-gradient(160deg, var(--paper) 0%, var(--paper-deep) 55%, #ffe6c4 100%);
+    padding:28px 16px 60px;
+  }
+
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  /* ---------- header ---------- */
+  .hero{
+    display:flex; align-items:center; gap:18px;
+    margin-bottom:22px; padding:18px 24px;
+    background:linear-gradient(120deg,#ffffffcc,#fff3e0cc);
+    border:1px solid var(--line); border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-soft); position:relative; overflow:hidden;
+  }
+  .hero::after{
+    content:""; position:absolute; right:-40px; top:-40px; width:150px;height:150px;
+    background:radial-gradient(circle, var(--gold) 0%, transparent 70%);
+    opacity:.35; border-radius:50%;
+  }
+  .hero-badge{
+    flex:0 0 auto; width:56px;height:56px; border-radius:14px;
+    background:conic-gradient(var(--gold) 0deg 90deg, var(--red) 90deg 180deg, var(--gold) 180deg 270deg, var(--red) 270deg 360deg);
+    box-shadow:inset 0 0 0 4px #fff, 0 4px 10px rgba(0,0,0,0.15);
+    position:relative; z-index:1;
+  }
+  .hero-badge::after{
+    content:"B"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-weight:800; color:#fff; font-size:20px; text-shadow:0 1px 2px rgba(0,0,0,.25);
+  }
+  .hero-text{position:relative;z-index:1;}
+  .hero-text h1{margin:0; font-size:26px; letter-spacing:.03em; color:var(--red-ink);}
+  .hero-text h1 span{color:var(--gold-deep);}
+  .hero-text p{margin:4px 0 0; font-size:13px; color:var(--ink-soft);}
+
+  /* ---------- layout ---------- */
+  .ops-area{
+    display:flex; flex-direction:column; gap:18px; margin-bottom:4px;
+  }
+  .cards-area{width:100%;}
+
+  .panel{
+    background:var(--cream); border:1px solid var(--line); border-radius:var(--radius-lg);
+    padding:20px; box-shadow:var(--shadow-soft); margin-bottom:18px;
+  }
+  .panel h2{margin:0 0 4px; font-size:16px; color:var(--red-ink); display:flex; align-items:center; gap:8px;}
+  .panel h2 .dot{width:9px;height:9px;border-radius:50%; background:var(--gold-deep); display:inline-block;}
+  .panel .desc{font-size:12px; color:var(--ink-soft); margin:0 0 14px;}
+
+  /* generic inputs */
+  input[type=text], input[type=number], textarea, select{
+    padding:7px 9px; border-radius:var(--radius-sm); border:1px solid var(--line);
+    background:#fff; color:var(--ink); font-size:13px; outline:none;
+    font-family:inherit;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  textarea{resize:vertical;}
+  input[type=text]:focus, input[type=number]:focus, textarea:focus, select:focus{
+    border-color:var(--red-deep); box-shadow:0 0 0 3px rgba(229,71,60,0.2);
+  }
+
+  /* ---------- buttons ---------- */
+  button{
+    font-family:inherit; cursor:pointer; border:none; border-radius:var(--radius-sm);
+    font-weight:700; transition:transform .1s ease, box-shadow .15s ease, background .15s ease;
+  }
+  button:active{transform:translateY(1px) scale(.98);}
+  button:disabled{opacity:.5; cursor:not-allowed; transform:none;}
+
+  .btn-primary{background:var(--red-deep); color:#fff; padding:9px 16px; font-size:13px; box-shadow:0 3px 0 var(--red-ink);}
+  .btn-primary:hover{background:var(--red);}
+  .btn-soft{background:var(--paper-deep); color:var(--red-ink); padding:9px 14px; font-size:12px;}
+  .btn-soft:hover{background:#ffdca0;}
+  .btn-outline{background:#fff; color:var(--red-ink); border:1.5px solid var(--red-deep); padding:8px 14px; font-size:12px;}
+  .btn-outline:hover{background:var(--paper);}
+  .btn-danger{background:var(--danger-bg); color:var(--danger); padding:6px 10px; font-size:11px; border:1px solid #f6c9d1;}
+  .btn-danger:hover{background:#fbd9df;}
+  .btn-block{width:100%;}
+  .row-buttons{display:flex; gap:10px; flex-wrap:wrap;}
+
+  /* ---------- field blocks ---------- */
+  .field-block{margin-bottom:14px;}
+  .field-label{display:block; font-size:13px; font-weight:700; color:var(--ink); margin-bottom:6px;}
+  .field-label small{display:inline-block; margin-left:6px; font-weight:400; font-size:11px; color:var(--ink-soft);}
+  #campaignTitle{width:100%;}
+
+  .field-grid{display:flex; flex-wrap:wrap; gap:10px;}
+  .field-grid .field-block{flex:1 1 140px; margin-bottom:0;}
+  .field-block select, .field-block input[type=number]{width:100%;}
+
+  .check-row{display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:14px;}
+  .check-row input{width:16px;height:16px; accent-color:var(--red-deep);}
+
+  .range-row{display:flex; align-items:center; gap:8px;}
+  .range-row input{width:100%;}
+  .range-row span{color:var(--ink-soft); font-size:12px; white-space:nowrap;}
+
+  .error-box{
+    margin-top:10px; background:var(--danger-bg); border:1px solid #f2b6c1; color:var(--danger);
+    font-size:12.5px; padding:10px 12px; border-radius:var(--radius-sm); display:none;
+  }
+  .error-box.show{display:block;}
+
+  .note-box{
+    margin-top:10px; background:var(--paper); border:1px solid var(--line); color:var(--ink-soft);
+    font-size:11.5px; padding:8px 12px; border-radius:var(--radius-sm);
+  }
+
+  /* ---------- swatches ---------- */
+  .swatch-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .swatch{
+    width:34px;height:34px; border-radius:50%; cursor:pointer;
+    border:3px solid #fff; box-shadow:0 0 0 1px var(--line), 0 2px 6px rgba(0,0,0,.12);
+    position:relative;
+  }
+  .swatch.active{box-shadow:0 0 0 2px var(--red-deep), 0 2px 6px rgba(0,0,0,.2);}
+  .swatch.active::after{
+    content:"✓"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:var(--red-ink); font-size:14px; font-weight:800; text-shadow:0 1px 1px #fff;
+  }
+
+  /* ---------- common image panel ---------- */
+  .char-preview{display:flex; align-items:center; gap:14px; margin-bottom:12px;}
+  .char-preview img{
+    width:76px;height:76px; object-fit:cover; border-radius:50%;
+    border:3px solid #fff; box-shadow:0 3px 10px rgba(0,0,0,0.15), 0 0 0 2px var(--gold);
+  }
+  .char-preview .placeholder{
+    width:76px;height:76px; border-radius:50%; border:2px dashed var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:10.5px; color:var(--ink-soft);
+    text-align:center; line-height:1.3; background:var(--paper);
+  }
+  .char-preview .hint{font-size:11.5px; color:var(--ink-soft); line-height:1.5;}
+  #commonFileInput{display:none;}
+  #drawnNumbersInput{width:100%; min-height:64px; font-size:13px; line-height:1.5;}
+
+  .stat-row{display:flex; gap:10px; margin:12px 0;}
+  .stat-box{flex:1 1 0; background:var(--paper); border:1px solid var(--line); border-radius:var(--radius-md); padding:8px 12px; text-align:center;}
+  .stat-label{font-size:10.5px; color:var(--ink-soft); font-weight:700; margin-bottom:2px;}
+  .stat-value{font-size:16px; font-weight:800; color:var(--red-ink);}
+
+  /* ---------- crop modal (reused pattern) ---------- */
+  .crop-modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(124,34,25,0.45); z-index:1000;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .crop-modal-overlay.show{display:flex;}
+  .crop-modal{
+    background:var(--cream); border-radius:var(--radius-lg); padding:22px; max-width:380px; width:100%;
+    box-shadow:0 20px 50px rgba(0,0,0,0.25); text-align:center;
+  }
+  .crop-modal h3{margin:0 0 6px; font-size:16px; color:var(--red-ink);}
+  .crop-hint{font-size:11.5px; color:var(--ink-soft); margin:0 0 14px; line-height:1.5;}
+  .crop-canvas-wrap{display:flex; justify-content:center; margin-bottom:14px;}
+  #cropCanvas{border-radius:14px; background:#eee; cursor:grab; touch-action:none; box-shadow:0 2px 10px rgba(0,0,0,0.12); max-width:100%;}
+  #cropCanvas:active{cursor:grabbing;}
+  .crop-zoom-row{display:flex; align-items:center; gap:10px; margin-bottom:16px;}
+  .crop-zoom-label{font-size:16px;}
+  .crop-zoom-row input[type=range]{flex:1; accent-color:var(--red-deep);}
+  .crop-modal-buttons{justify-content:center;}
+
+  /* ---------- cards ---------- */
+  #cardList{display:flex; flex-direction:column; gap:16px;}
+  .bingo-card{
+    background:#fff; border:1px solid var(--line-soft); border-radius:var(--radius-lg);
+    padding:14px; box-shadow:0 3px 10px rgba(0,0,0,0.06);
+  }
+  .bingo-card-head{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:10px;
+  }
+  .bingo-card-head .idbadge{
+    font-size:10.5px; font-weight:800; color:#fff; background:var(--red-deep);
+    padding:3px 9px; border-radius:999px; white-space:nowrap; letter-spacing:.03em;
+  }
+  .bingo-card-head .name-field{flex:1; min-width:0;}
+  .bingo-card-head .name-field input{width:100%; font-weight:700; font-size:14px;}
+  .status-badges{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;}
+  .status-badge{
+    font-size:11.5px; font-weight:800; padding:4px 11px; border-radius:999px; letter-spacing:.02em;
+  }
+  .status-badge.bingo{
+    color:#fff; background:linear-gradient(135deg, var(--gold) 0%, var(--red) 100%);
+    box-shadow:0 2px 6px rgba(207,47,39,0.35);
+  }
+  .status-badge.reach{color:var(--red-deep); background:var(--paper); border:1.5px solid var(--gold-deep);}
+  .status-badge.none{color:var(--ink-soft); background:var(--paper); border:1px solid var(--line);}
+
+  .bingo-grid-wrap{display:flex; justify-content:center; margin-bottom:12px;}
+  .bingo-grid{display:grid; gap:4px; width:100%; max-width:360px;}
+  .bingo-cell{
+    aspect-ratio:1/1; display:flex; align-items:center; justify-content:center;
+    border-radius:6px; font-weight:800; border:1px solid var(--line-soft);
+    background:#fff; color:var(--ink); text-align:center; padding:2px;
+  }
+  .bingo-cell.marked{color:#fff; box-shadow:inset 0 0 0 2px rgba(255,255,255,.5);}
+  .bingo-cell.free{color:#fff; background:linear-gradient(135deg, var(--gold) 0%, var(--gold-deep) 100%); font-size:.75em;}
+  .bingo-cell.err{background:var(--danger-bg); color:var(--danger); font-size:11px;}
+
+  .bingo-card-actions{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+
+  .cards-empty{text-align:center; color:var(--ink-soft); font-size:13px; padding:26px 0;}
+
+  /* ---------- admin panel ---------- */
+  .panel-admin{
+    border-color:var(--gold-deep);
+    box-shadow:0 6px 18px rgba(242,163,0,0.18);
+  }
+  .admin-group{margin-bottom:14px;}
+  .admin-group:last-child{margin-bottom:0;}
+  .admin-group-title{
+    font-size:12.5px; font-weight:800; color:var(--red-ink); margin-bottom:6px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .admin-group-title .cnt{
+    font-size:10.5px; background:var(--red-deep); color:#fff; border-radius:999px; padding:1px 8px;
+  }
+  .admin-group.reach .admin-group-title{color:var(--gold-deep);}
+  .admin-group.reach .admin-group-title .cnt{background:var(--gold-deep);}
+  .admin-list{display:flex; flex-direction:column; gap:6px;}
+  .admin-item{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:#fff; border:1px solid var(--line-soft); border-radius:var(--radius-sm);
+    padding:7px 12px; font-size:12.5px;
+    cursor:pointer; transition:background .15s, border-color .15s, transform .1s;
+  }
+  .admin-item:hover{background:var(--paper); border-color:var(--gold-deep);}
+  .admin-item:active{transform:translateY(1px) scale(.99);}
+  .admin-item .a-name{font-weight:700; color:var(--ink);}
+  .admin-item .a-serial{font-size:11px; color:var(--ink-soft);}
+  .admin-empty{text-align:center; color:var(--ink-soft); font-size:12px; padding:14px 0;}
+
+  /* ---------- jump-to-card highlight ---------- */
+  @keyframes cardJumpGlow{
+    0%{ box-shadow:0 0 0 5px rgba(255,203,63,0.95), 0 10px 26px rgba(242,163,0,0.5); }
+    75%{ box-shadow:0 0 0 5px rgba(255,203,63,0.95), 0 10px 26px rgba(242,163,0,0.5); }
+    100%{ box-shadow:0 3px 10px rgba(0,0,0,0.06); }
+  }
+  .bingo-card.jump-highlight{
+    animation:cardJumpGlow 1.6s ease;
+  }
+
+  footer{text-align:center; font-size:11px; color:var(--ink-soft); margin-top:24px;}
+
+  @media (max-width:480px){
+    .hero{padding:14px 16px;}
+    .hero-text h1{font-size:21px;}
+    .stat-row{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="hero-badge"></div>
+    <div class="hero-text">
+      <h1>Bingo<span>Card</span></h1>
+      <p>カード作成からビンゴ判定・抽選進行管理・PNG保存まで — Rurupop Carnival</p>
+    </div>
+  </div>
+
+  <div class="ops-area">
+    <div class="panel panel-drawn">
+      <h2><span class="dot"></span>抽選済みナンバー</h2>
+      <p class="desc">カンマ区切りで入力してください。この欄が唯一の基準データです。</p>
+      <textarea id="drawnNumbersInput" placeholder="例：1,5,18,32,41"></textarea>
+      <div class="row-buttons" style="margin-top:10px;">
+        <button class="btn-soft" id="quickDrawBtn">🎲 次の番号を引く</button>
+        <button class="btn-outline" id="clearDrawnBtn">抽選済みをクリア</button>
+      </div>
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-label">抽選済み数</div>
+          <div class="stat-value" id="statDrawn">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">範囲内残り数</div>
+          <div class="stat-value" id="statRemain">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel panel-admin">
+      <h2><span class="dot"></span>管理画面</h2>
+      <p class="desc">ビンゴ・リーチのカードをクリックすると、該当カードまでジャンプします。</p>
+      <div id="adminArea"></div>
+    </div>
+
+    <div class="panel">
+      <h2><span class="dot"></span>共通設定</h2>
+
+      <div class="field-block">
+        <label for="campaignTitle" class="field-label">企画タイトル<small>PNG画像に表示されます</small></label>
+        <input type="text" id="campaignTitle" placeholder="例：夏祭りビンゴ大会" maxlength="40">
+      </div>
+
+      <div class="field-grid" style="margin-bottom:14px;">
+        <div class="field-block">
+          <label for="cardSize" class="field-label">カードサイズ</label>
+          <select id="cardSize">
+            <option value="3">3 × 3</option>
+            <option value="5" selected>5 × 5</option>
+            <option value="7">7 × 7</option>
+            <option value="9">9 × 9</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="check-row">
+        <input type="checkbox" id="freeCheck" checked>
+        <label for="freeCheck">中央マスをFREEにする</label>
+      </div>
+
+      <div class="field-block">
+        <label class="field-label">数字範囲</label>
+        <div class="range-row">
+          <input type="number" id="rangeStart" value="1">
+          <span>〜</span>
+          <input type="number" id="rangeEnd" value="75">
+        </div>
+      </div>
+
+      <div class="error-box" id="rangeError"></div>
+      <div class="note-box" id="regenNote" style="display:none;">設定変更に合わせて全カードを再生成しました。</div>
+    </div>
+
+    <div class="panel">
+      <h2><span class="dot"></span>デザイン設定</h2>
+      <div class="field-block">
+        <label class="field-label">背景色<small>カード共通</small></label>
+        <div class="swatch-row" id="bgSwatches"></div>
+      </div>
+
+      <div class="char-preview">
+        <div id="commonImgWrap"><div class="placeholder" id="commonImgPlaceholder">画像<br>未設定</div></div>
+        <div class="hint">全カード・PNG画像に共通で表示される画像です。<br>PNG / JPEG を選んで設定できます。</div>
+      </div>
+      <div class="row-buttons">
+        <button class="btn-soft" id="imgUploadBtn">画像を選択</button>
+        <button class="btn-outline" id="imgRemoveBtn">画像を削除</button>
+      </div>
+      <input type="file" id="commonFileInput" accept="image/png, image/jpeg">
+    </div>
+  </div>
+
+  <div class="cards-area">
+    <div class="panel">
+      <h2><span class="dot"></span>カード管理</h2>
+      <p class="desc">カードを追加して、名前を入力してください。抽選済みナンバーに応じて自動でビンゴ・リーチ判定されます。</p>
+      <div class="row-buttons" style="margin-bottom:14px;">
+        <button class="btn-primary" id="addCardBtn">＋ カード追加</button>
+      </div>
+      <div id="cardList"></div>
+    </div>
+  </div>
+
+  <div class="crop-modal-overlay" id="cropModalOverlay">
+    <div class="crop-modal">
+      <h3>画像の位置とサイズを調整</h3>
+      <p class="crop-hint">ドラッグで位置を移動、スライダーで拡大・縮小できます。丸い枠の中が使用されます。</p>
+      <div class="crop-canvas-wrap">
+        <canvas id="cropCanvas" width="320" height="320"></canvas>
+      </div>
+      <div class="crop-zoom-row">
+        <span class="crop-zoom-label">🔍</span>
+        <input type="range" id="cropZoom" min="100" max="320" value="100">
+      </div>
+      <div class="row-buttons crop-modal-buttons">
+        <button class="btn-outline" id="cropCancelBtn">キャンセル</button>
+        <button class="btn-primary" id="cropApplyBtn">この範囲に決定</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>BingoCard — Rurupop Carnival &nbsp;|&nbsp; #BingoCard #RurupopCarnival</footer>
+</div>
+
+<canvas id="renderCanvas" width="900" height="1100" style="display:none;"></canvas>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ constants ============ */
+  var SIZE_DEFAULT_RANGE = {
+    3: {start:1, end:27},
+    5: {start:1, end:75},
+    7: {start:1, end:147},
+    9: {start:1, end:243}
+  };
+
+  var BG_COLORS = [
+    {key:"pink",   name:"ピンク",   bg:"#ffe1ec", deep:"#ff8fb3", ink:"#8a3350"},
+    {key:"blue",   name:"ブルー",   bg:"#dff0ff", deep:"#7ec3f2", ink:"#2b5d80"},
+    {key:"green",  name:"グリーン", bg:"#e2f7e6", deep:"#7ed397", ink:"#2c6b3d"},
+    {key:"purple", name:"パープル", bg:"#efe3fb", deep:"#c299ee", ink:"#5b3080"},
+    {key:"yellow", name:"イエロー", bg:"#fff6cf", deep:"#ffd54a", ink:"#7a5b00"},
+    {key:"white",  name:"ホワイト", bg:"#ffffff", deep:"#e8dfce", ink:"#3b2c22"}
+  ];
+
+  var MAX_CARDS = 200;
+
+  /* ============ state ============ */
+  var state = {
+    campaignTitle: "",
+    size: 5,
+    free: true,
+    rangeStart: 1,
+    rangeEnd: 75,
+    bgColorKey: "pink",
+    commonImgSrc: "",     // dataURL or ""
+    drawnSet: new Set(),  // parsed numbers
+    drawnRaw: ""
+  };
+
+  var cards = [];        // {id, serial, name, size, free, start, end, numbers:[[..]]}
+  var serialCounter = 0;
+  var cardIdCounter = 0;
+  var rangeInvalid = false;
+
+  /* ============ DOM refs ============ */
+  var campaignTitleEl = document.getElementById("campaignTitle");
+  var cardSizeEl = document.getElementById("cardSize");
+  var freeCheckEl = document.getElementById("freeCheck");
+  var rangeStartEl = document.getElementById("rangeStart");
+  var rangeEndEl = document.getElementById("rangeEnd");
+  var rangeErrorEl = document.getElementById("rangeError");
+  var regenNoteEl = document.getElementById("regenNote");
+
+  var drawnNumbersInputEl = document.getElementById("drawnNumbersInput");
+  var quickDrawBtn = document.getElementById("quickDrawBtn");
+  var clearDrawnBtn = document.getElementById("clearDrawnBtn");
+  var statDrawnEl = document.getElementById("statDrawn");
+  var statRemainEl = document.getElementById("statRemain");
+
+  var bgSwatchesEl = document.getElementById("bgSwatches");
+
+  var commonImgWrap = document.getElementById("commonImgWrap");
+  var imgUploadBtn = document.getElementById("imgUploadBtn");
+  var imgRemoveBtn = document.getElementById("imgRemoveBtn");
+  var commonFileInput = document.getElementById("commonFileInput");
+
+  var addCardBtn = document.getElementById("addCardBtn");
+  var cardListEl = document.getElementById("cardList");
+  var adminAreaEl = document.getElementById("adminArea");
+
+  var renderCanvas = document.getElementById("renderCanvas");
+
+  /* ============ utils ============ */
+  function pad3(n){ n = String(n); while(n.length < 3) n = "0" + n; return n; }
+  function serialLabel(n){ return "No." + pad3(n); }
+  function getBgColor(key){
+    for(var i=0;i<BG_COLORS.length;i++){ if(BG_COLORS[i].key === key) return BG_COLORS[i]; }
+    return BG_COLORS[0];
+  }
+
+  function shuffle(arr){
+    for(var i=arr.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var t = arr[i]; arr[i]=arr[j]; arr[j]=t;
+    }
+    return arr;
+  }
+
+  function parseDrawnNumbers(str){
+    var set = new Set();
+    (str||"").split(/[,、\s]+/).forEach(function(tok){
+      if(tok === "") return;
+      var n = parseInt(tok, 10);
+      if(!isNaN(n)) set.add(n);
+    });
+    return set;
+  }
+
+  function requiredCount(size, free){
+    return size*size - (free ? 1 : 0);
+  }
+
+  function rangeSize(start, end){
+    if(isNaN(start) || isNaN(end)) return 0;
+    return Math.max(0, end - start + 1);
+  }
+
+  function validateRange(){
+    var start = state.rangeStart, end = state.rangeEnd;
+    var need = requiredCount(state.size, state.free);
+    var avail = rangeSize(start, end);
+    if(isNaN(start) || isNaN(end)){
+      rangeInvalid = true;
+      showRangeError("数字範囲を正しく入力してください。");
+      return false;
+    }
+    if(start > end){
+      rangeInvalid = true;
+      showRangeError("開始番号は終了番号以下にしてください。");
+      return false;
+    }
+    if(avail < need){
+      rangeInvalid = true;
+      showRangeError("数字が不足しています。" + state.size + "×" + state.size + "（" + (state.free ? "FREEあり" : "FREEなし") + "）には最低 " + need + " 個の数字が必要ですが、現在の範囲では " + avail + " 個しかありません。");
+      return false;
+    }
+    rangeInvalid = false;
+    hideRangeError();
+    return true;
+  }
+
+  function showRangeError(msg){
+    rangeErrorEl.textContent = msg;
+    rangeErrorEl.classList.add("show");
+  }
+  function hideRangeError(){
+    rangeErrorEl.classList.remove("show");
+  }
+
+  function flashRegenNote(){
+    regenNoteEl.style.display = "block";
+    clearTimeout(flashRegenNote._t);
+    flashRegenNote._t = setTimeout(function(){ regenNoteEl.style.display = "none"; }, 2200);
+  }
+
+  /* ============ card number generation ============ */
+  function generateCardNumbers(size, start, end, free){
+    var need = requiredCount(size, free);
+    var pool = [];
+    for(var n = start; n <= end; n++) pool.push(n);
+    if(pool.length < need) return null;
+    shuffle(pool);
+    var picked = pool.slice(0, need);
+    var grid = [];
+    var idx = 0;
+    var center = Math.floor(size/2);
+    for(var r=0;r<size;r++){
+      var row = [];
+      for(var c=0;c<size;c++){
+        if(free && r === center && c === center){
+          row.push("FREE");
+        } else {
+          row.push(picked[idx++]);
+        }
+      }
+      grid.push(row);
+    }
+    return grid;
+  }
+
+  function regenerateCard(card){
+    var g = generateCardNumbers(state.size, state.rangeStart, state.rangeEnd, state.free);
+    card.size = state.size;
+    card.free = state.free;
+    card.start = state.rangeStart;
+    card.end = state.rangeEnd;
+    card.numbers = g; // may be null if invalid
+  }
+
+  function regenerateAllCards(){
+    cards.forEach(regenerateCard);
+  }
+
+  /* ============ bingo / reach judgement ============ */
+  function getLines(size){
+    var lines = [];
+    for(var r=0;r<size;r++){
+      var row = [];
+      for(var c=0;c<size;c++) row.push([r,c]);
+      lines.push(row);
+    }
+    for(var c2=0;c2<size;c2++){
+      var col = [];
+      for(var r2=0;r2<size;r2++) col.push([r2,c2]);
+      lines.push(col);
+    }
+    var d1 = [], d2 = [];
+    for(var i=0;i<size;i++){
+      d1.push([i,i]);
+      d2.push([i, size-1-i]);
+    }
+    lines.push(d1);
+    lines.push(d2);
+    return lines;
+  }
+
+  function isMarked(cell, drawnSet){
+    if(cell === "FREE") return true;
+    return drawnSet.has(cell);
+  }
+
+  function judgeCard(card){
+    var result = {bingoCount:0, reach:false, marks:null};
+    if(!card.numbers) return result;
+    var size = card.size;
+    var lines = getLines(size);
+    var marks = [];
+    for(var r=0;r<size;r++){
+      var row = [];
+      for(var c=0;c<size;c++) row.push(isMarked(card.numbers[r][c], state.drawnSet));
+      marks.push(row);
+    }
+    var bingoCount = 0, reach = false;
+    lines.forEach(function(line){
+      var markedCount = 0;
+      line.forEach(function(pos){ if(marks[pos[0]][pos[1]]) markedCount++; });
+      if(markedCount === size) bingoCount++;
+      else if(markedCount === size - 1) reach = true;
+    });
+    result.bingoCount = bingoCount;
+    result.reach = reach;
+    result.marks = marks;
+    return result;
+  }
+
+  /* ============ swatches ============ */
+  function renderSwatches(){
+    bgSwatchesEl.innerHTML = "";
+    BG_COLORS.forEach(function(c){
+      var el = document.createElement("div");
+      el.className = "swatch" + (c.key === state.bgColorKey ? " active" : "");
+      el.style.background = c.bg;
+      el.title = c.name;
+      el.addEventListener("click", function(){
+        state.bgColorKey = c.key;
+        renderSwatches();
+        renderCards();
+      });
+      bgSwatchesEl.appendChild(el);
+    });
+  }
+
+  /* ============ card list rendering ============ */
+  function fontSizeForGrid(size){
+    return Math.max(9, Math.min(20, 150/size));
+  }
+
+  function buildGridEl(card, judged, opts){
+    opts = opts || {};
+    var wrap = document.createElement("div");
+    wrap.className = "bingo-grid-wrap";
+    var grid = document.createElement("div");
+    grid.className = "bingo-grid";
+    grid.style.gridTemplateColumns = "repeat(" + card.size + ", 1fr)";
+    grid.style.fontSize = fontSizeForGrid(card.size) + "px";
+
+    var bgc = getBgColor(state.bgColorKey);
+
+    if(!card.numbers){
+      var errCell = document.createElement("div");
+      errCell.className = "bingo-cell err";
+      errCell.style.gridColumn = "1 / -1";
+      errCell.textContent = "数字範囲が不足しているため生成できません";
+      grid.appendChild(errCell);
+    } else {
+      for(var r=0;r<card.size;r++){
+        for(var c=0;c<card.size;c++){
+          var val = card.numbers[r][c];
+          var cell = document.createElement("div");
+          cell.className = "bingo-cell";
+          if(val === "FREE"){
+            cell.classList.add("free");
+            cell.textContent = "FREE";
+          } else {
+            cell.textContent = val;
+            var marked = judged.marks && judged.marks[r][c];
+            if(marked){
+              cell.classList.add("marked");
+              cell.style.background = bgc.deep;
+              cell.style.borderColor = bgc.deep;
+            } else {
+              cell.style.background = "#fff";
+              cell.style.color = "var(--ink)";
+            }
+          }
+          grid.appendChild(cell);
+        }
+      }
+    }
+    wrap.appendChild(grid);
+    return wrap;
+  }
+
+  function renderCards(){
+    cardListEl.innerHTML = "";
+    if(cards.length === 0){
+      var empty = document.createElement("div");
+      empty.className = "cards-empty";
+      empty.textContent = "まだカードがありません。「＋ カード追加」から作成してください。";
+      cardListEl.appendChild(empty);
+      renderAdmin();
+      return;
+    }
+
+    var bgc = getBgColor(state.bgColorKey);
+
+    cards.forEach(function(card){
+      var judged = judgeCard(card);
+
+      var el = document.createElement("div");
+      el.className = "bingo-card";
+      el.id = "card-" + card.id;
+      el.style.background = bgc.bg;
+      el.style.borderColor = bgc.deep;
+
+      // head
+      var head = document.createElement("div");
+      head.className = "bingo-card-head";
+
+      var idbadge = document.createElement("div");
+      idbadge.className = "idbadge";
+      idbadge.style.background = bgc.ink;
+      idbadge.textContent = serialLabel(card.serial);
+      head.appendChild(idbadge);
+
+      var nameField = document.createElement("div");
+      nameField.className = "name-field";
+      var nameInput = document.createElement("input");
+      nameInput.type = "text";
+      nameInput.placeholder = "カード名（例：るる分）";
+      nameInput.value = card.name;
+      nameInput.maxLength = 30;
+      nameInput.addEventListener("input", function(){
+        card.name = nameInput.value;
+      });
+      nameField.appendChild(nameInput);
+      head.appendChild(nameField);
+
+      el.appendChild(head);
+
+      // status badges
+      var badges = document.createElement("div");
+      badges.className = "status-badges";
+      if(judged.bingoCount > 0){
+        var b = document.createElement("div");
+        b.className = "status-badge bingo";
+        b.textContent = judged.bingoCount === 1 ? "BINGO!" : (judged.bingoCount + " BINGO");
+        badges.appendChild(b);
+      }
+      if(judged.reach){
+        var rb = document.createElement("div");
+        rb.className = "status-badge reach";
+        rb.textContent = "あと1マス！";
+        badges.appendChild(rb);
+      }
+      if(judged.bingoCount === 0 && !judged.reach){
+        var nb = document.createElement("div");
+        nb.className = "status-badge none";
+        nb.textContent = "未BINGO";
+        badges.appendChild(nb);
+      }
+      el.appendChild(badges);
+
+      // grid
+      el.appendChild(buildGridEl(card, judged));
+
+      // actions
+      var actions = document.createElement("div");
+      actions.className = "bingo-card-actions";
+
+      var regenBtn = document.createElement("button");
+      regenBtn.className = "btn-soft";
+      regenBtn.textContent = "🔀 ランダム再生成";
+      regenBtn.addEventListener("click", function(){
+        regenerateCard(card);
+        renderCards();
+      });
+      actions.appendChild(regenBtn);
+
+      var pngBtn = document.createElement("button");
+      pngBtn.className = "btn-outline";
+      pngBtn.textContent = "🖼 PNG保存";
+      pngBtn.addEventListener("click", function(){ exportCardPng(card); });
+      actions.appendChild(pngBtn);
+
+      var delBtn = document.createElement("button");
+      delBtn.className = "btn-danger";
+      delBtn.textContent = "削除";
+      delBtn.addEventListener("click", function(){
+        var ok = window.confirm((card.name || serialLabel(card.serial)) + " を削除しますか？この操作は元に戻せません。");
+        if(!ok) return;
+        cards = cards.filter(function(c){ return c.id !== card.id; });
+        renderCards();
+      });
+      actions.appendChild(delBtn);
+
+      el.appendChild(actions);
+      cardListEl.appendChild(el);
+    });
+
+    renderAdmin();
+  }
+
+  /* ============ admin panel ============ */
+  function renderAdmin(){
+    adminAreaEl.innerHTML = "";
+
+    if(cards.length === 0){
+      var empty = document.createElement("div");
+      empty.className = "admin-empty";
+      empty.textContent = "カードを追加すると、ここにビンゴ状況が表示されます。";
+      adminAreaEl.appendChild(empty);
+      return;
+    }
+
+    var judgedList = cards.map(function(card){
+      return {card:card, judged:judgeCard(card)};
+    });
+
+    var maxBingo = 0;
+    judgedList.forEach(function(item){ if(item.judged.bingoCount > maxBingo) maxBingo = item.judged.bingoCount; });
+
+    var anyGroupShown = false;
+
+    for(var n = maxBingo; n >= 1; n--){
+      var group = judgedList.filter(function(item){ return item.judged.bingoCount === n; });
+      if(group.length === 0) continue;
+      anyGroupShown = true;
+      adminAreaEl.appendChild(buildAdminGroup(n + "ビンゴ", group, false));
+    }
+
+    var reachGroup = judgedList.filter(function(item){ return item.judged.reach; });
+    if(reachGroup.length > 0){
+      anyGroupShown = true;
+      adminAreaEl.appendChild(buildAdminGroup("リーチ", reachGroup, true));
+    }
+
+    if(!anyGroupShown){
+      var empty2 = document.createElement("div");
+      empty2.className = "admin-empty";
+      empty2.textContent = "現在、ビンゴ・リーチのカードはありません。";
+      adminAreaEl.appendChild(empty2);
+    }
+  }
+
+  /* ============ jump to card (from admin panel) ============ */
+  function jumpToCard(cardId){
+    var el = document.getElementById("card-" + cardId);
+    if(!el) return;
+    el.scrollIntoView({behavior:"smooth", block:"center"});
+    el.classList.remove("jump-highlight");
+    void el.offsetWidth; // restart animation if clicked repeatedly
+    el.classList.add("jump-highlight");
+    setTimeout(function(){ el.classList.remove("jump-highlight"); }, 1700);
+  }
+
+  function buildAdminGroup(title, items, isReachGroup){
+    var group = document.createElement("div");
+    group.className = "admin-group" + (isReachGroup ? " reach" : "");
+
+    var t = document.createElement("div");
+    t.className = "admin-group-title";
+    var titleSpan = document.createElement("span");
+    titleSpan.textContent = title;
+    t.appendChild(titleSpan);
+    var cnt = document.createElement("span");
+    cnt.className = "cnt";
+    cnt.textContent = items.length;
+    t.appendChild(cnt);
+    group.appendChild(t);
+
+    var list = document.createElement("div");
+    list.className = "admin-list";
+    items.forEach(function(item){
+      var row = document.createElement("div");
+      row.className = "admin-item";
+      row.title = "クリックしてカードへジャンプ";
+      var name = document.createElement("span");
+      name.className = "a-name";
+      name.textContent = item.card.name || "（無名カード）";
+      var serial = document.createElement("span");
+      serial.className = "a-serial";
+      serial.textContent = serialLabel(item.card.serial);
+      row.appendChild(name);
+      row.appendChild(serial);
+      row.addEventListener("click", function(){ jumpToCard(item.card.id); });
+      list.appendChild(row);
+    });
+    group.appendChild(list);
+    return group;
+  }
+
+  /* ============ stats ============ */
+  function updateStats(){
+    statDrawnEl.textContent = state.drawnSet.size;
+    var avail = rangeSize(state.rangeStart, state.rangeEnd);
+    var remaining = 0;
+    if(!isNaN(state.rangeStart) && !isNaN(state.rangeEnd)){
+      for(var n = state.rangeStart; n <= state.rangeEnd; n++){
+        if(!state.drawnSet.has(n)) remaining++;
+      }
+    }
+    statRemainEl.textContent = remaining;
+  }
+
+  /* ============ full update pipeline ============ */
+  function updateAll(){
+    updateStats();
+    renderCards();
+  }
+
+  /* ============ settings: title ============ */
+  campaignTitleEl.addEventListener("input", function(){
+    state.campaignTitle = campaignTitleEl.value;
+  });
+
+  /* ============ settings: size ============ */
+  cardSizeEl.addEventListener("change", function(){
+    var size = parseInt(cardSizeEl.value, 10);
+    state.size = size;
+    var def = SIZE_DEFAULT_RANGE[size];
+    state.rangeStart = def.start;
+    state.rangeEnd = def.end;
+    rangeStartEl.value = def.start;
+    rangeEndEl.value = def.end;
+    var ok = validateRange();
+    if(ok){
+      regenerateAllCards();
+      if(cards.length > 0) flashRegenNote();
+    }
+    updateAll();
+  });
+
+  /* ============ settings: FREE toggle ============ */
+  freeCheckEl.addEventListener("change", function(){
+    state.free = freeCheckEl.checked;
+    var ok = validateRange();
+    if(ok){
+      regenerateAllCards();
+      if(cards.length > 0) flashRegenNote();
+    }
+    updateAll();
+  });
+
+  /* ============ settings: range ============ */
+  function onRangeChange(){
+    var start = parseInt(rangeStartEl.value, 10);
+    var end = parseInt(rangeEndEl.value, 10);
+    state.rangeStart = start;
+    state.rangeEnd = end;
+    var ok = validateRange();
+    if(ok){
+      regenerateAllCards();
+      if(cards.length > 0) flashRegenNote();
+    }
+    updateAll();
+  }
+  rangeStartEl.addEventListener("input", onRangeChange);
+  rangeEndEl.addEventListener("input", onRangeChange);
+
+  /* ============ drawn numbers ============ */
+  drawnNumbersInputEl.addEventListener("input", function(){
+    state.drawnRaw = drawnNumbersInputEl.value;
+    state.drawnSet = parseDrawnNumbers(state.drawnRaw);
+    updateAll();
+  });
+
+  clearDrawnBtn.addEventListener("click", function(){
+    var ok = window.confirm("抽選済みナンバーをすべてクリアしますか？");
+    if(!ok) return;
+    state.drawnRaw = "";
+    state.drawnSet = new Set();
+    drawnNumbersInputEl.value = "";
+    updateAll();
+  });
+
+  quickDrawBtn.addEventListener("click", function(){
+    if(rangeInvalid){
+      alert("数字範囲の設定を確認してください。");
+      return;
+    }
+    var candidates = [];
+    for(var n = state.rangeStart; n <= state.rangeEnd; n++){
+      if(!state.drawnSet.has(n)) candidates.push(n);
+    }
+    if(candidates.length === 0){
+      alert("これ以上抽選できる番号がありません。");
+      return;
+    }
+    var pick = candidates[Math.floor(Math.random()*candidates.length)];
+    state.drawnSet.add(pick);
+    var arr = Array.from(state.drawnSet).sort(function(a,b){return a-b;});
+    state.drawnRaw = arr.join(",");
+    drawnNumbersInputEl.value = state.drawnRaw;
+    updateAll();
+  });
+
+  /* ============ add card ============ */
+  addCardBtn.addEventListener("click", function(){
+    if(cards.length >= MAX_CARDS){
+      alert("カード数が上限（" + MAX_CARDS + "枚）に達しています。");
+      return;
+    }
+    validateRange();
+    serialCounter++;
+    cardIdCounter++;
+    var card = {
+      id: "card_" + cardIdCounter,
+      serial: serialCounter,
+      name: "",
+      size: state.size,
+      free: state.free,
+      start: state.rangeStart,
+      end: state.rangeEnd,
+      numbers: null
+    };
+    regenerateCard(card);
+    cards.push(card);
+    renderCards();
+  });
+
+  /* ============ common image (upload + circular crop, pattern reused from Shake & Take) ============ */
+  function renderCommonImgPreview(){
+    commonImgWrap.innerHTML = "";
+    if(state.commonImgSrc){
+      var img = document.createElement("img");
+      img.src = state.commonImgSrc;
+      img.alt = "共通画像";
+      commonImgWrap.appendChild(img);
+    } else {
+      var ph = document.createElement("div");
+      ph.className = "placeholder";
+      ph.id = "commonImgPlaceholder";
+      ph.innerHTML = "画像<br>未設定";
+      commonImgWrap.appendChild(ph);
+    }
+  }
+
+  imgUploadBtn.addEventListener("click", function(){ commonFileInput.click(); });
+
+  imgRemoveBtn.addEventListener("click", function(){
+    state.commonImgSrc = "";
+    renderCommonImgPreview();
+    renderCards();
+  });
+
+  commonFileInput.addEventListener("change", function(){
+    var file = commonFileInput.files && commonFileInput.files[0];
+    if(!file) return;
+    if(!/^image\/(png|jpeg)$/.test(file.type)){
+      alert("PNG または JPEG 画像を選んでください。");
+      commonFileInput.value = "";
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(e){
+      openCropModal(e.target.result);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  /* ---- crop modal ---- */
+  var cropModalOverlay = document.getElementById("cropModalOverlay");
+  var cropCanvas = document.getElementById("cropCanvas");
+  var cropZoomEl = document.getElementById("cropZoom");
+  var cropApplyBtn = document.getElementById("cropApplyBtn");
+  var cropCancelBtn = document.getElementById("cropCancelBtn");
+  var cropCtx = cropCanvas.getContext("2d");
+  var CROP_SIZE = 320;
+
+  var cropState = {
+    img: null, baseScale: 1, zoom: 1, offsetX: 0, offsetY: 0,
+    dragging: false, lastX: 0, lastY: 0
+  };
+
+  function openCropModal(src){
+    var img = new Image();
+    img.onload = function(){
+      cropState.img = img;
+      cropState.baseScale = Math.max(CROP_SIZE/img.width, CROP_SIZE/img.height);
+      cropState.zoom = 1;
+      cropState.offsetX = 0;
+      cropState.offsetY = 0;
+      cropZoomEl.value = 100;
+      drawCropPreview();
+      cropModalOverlay.classList.add("show");
+    };
+    img.onerror = function(){
+      alert("画像の読み込みに失敗しました。別の画像でお試しください。");
+    };
+    img.src = src;
+  }
+
+  function closeCropModal(){
+    cropModalOverlay.classList.remove("show");
+    cropState.img = null;
+    commonFileInput.value = "";
+  }
+
+  function getCropDisplaySize(){
+    var img = cropState.img;
+    var eff = cropState.baseScale * cropState.zoom;
+    return { dw: img.width*eff, dh: img.height*eff };
+  }
+
+  function clampCropOffset(){
+    var d = getCropDisplaySize();
+    var maxX = Math.max(0, (d.dw-CROP_SIZE)/2);
+    var maxY = Math.max(0, (d.dh-CROP_SIZE)/2);
+    cropState.offsetX = Math.max(-maxX, Math.min(maxX, cropState.offsetX));
+    cropState.offsetY = Math.max(-maxY, Math.min(maxY, cropState.offsetY));
+  }
+
+  function drawCropPreview(){
+    if(!cropState.img) return;
+    clampCropOffset();
+    var d = getCropDisplaySize();
+    var dx = CROP_SIZE/2 - d.dw/2 + cropState.offsetX;
+    var dy = CROP_SIZE/2 - d.dh/2 + cropState.offsetY;
+
+    cropCtx.clearRect(0,0,CROP_SIZE,CROP_SIZE);
+    cropCtx.fillStyle = "#eee4d6";
+    cropCtx.fillRect(0,0,CROP_SIZE,CROP_SIZE);
+    cropCtx.drawImage(cropState.img, dx, dy, d.dw, d.dh);
+
+    cropCtx.save();
+    cropCtx.beginPath();
+    cropCtx.rect(0,0,CROP_SIZE,CROP_SIZE);
+    cropCtx.moveTo(CROP_SIZE/2 + CROP_SIZE/2*0.94, CROP_SIZE/2);
+    cropCtx.arc(CROP_SIZE/2, CROP_SIZE/2, CROP_SIZE/2*0.94, 0, Math.PI*2, true);
+    cropCtx.closePath();
+    cropCtx.fillStyle = "rgba(50,30,20,0.5)";
+    cropCtx.fill("evenodd");
+    cropCtx.restore();
+
+    cropCtx.beginPath();
+    cropCtx.arc(CROP_SIZE/2, CROP_SIZE/2, CROP_SIZE/2*0.94, 0, Math.PI*2);
+    cropCtx.lineWidth = 3;
+    cropCtx.strokeStyle = "#ffffff";
+    cropCtx.stroke();
+  }
+
+  cropZoomEl.addEventListener("input", function(){
+    cropState.zoom = Number(cropZoomEl.value)/100;
+    drawCropPreview();
+  });
+
+  function cropPointerPos(evt){
+    var rect = cropCanvas.getBoundingClientRect();
+    var scaleX = CROP_SIZE/rect.width;
+    var scaleY = CROP_SIZE/rect.height;
+    return { x:(evt.clientX-rect.left)*scaleX, y:(evt.clientY-rect.top)*scaleY };
+  }
+
+  cropCanvas.addEventListener("pointerdown", function(evt){
+    if(!cropState.img) return;
+    cropState.dragging = true;
+    var p = cropPointerPos(evt);
+    cropState.lastX = p.x; cropState.lastY = p.y;
+    cropCanvas.setPointerCapture(evt.pointerId);
+  });
+  cropCanvas.addEventListener("pointermove", function(evt){
+    if(!cropState.dragging) return;
+    var p = cropPointerPos(evt);
+    cropState.offsetX += (p.x - cropState.lastX);
+    cropState.offsetY += (p.y - cropState.lastY);
+    cropState.lastX = p.x; cropState.lastY = p.y;
+    drawCropPreview();
+  });
+  function cropPointerEnd(){ cropState.dragging = false; }
+  cropCanvas.addEventListener("pointerup", cropPointerEnd);
+  cropCanvas.addEventListener("pointercancel", cropPointerEnd);
+  cropCanvas.addEventListener("pointerleave", function(){ cropState.dragging = false; });
+
+  cropCancelBtn.addEventListener("click", closeCropModal);
+
+  cropApplyBtn.addEventListener("click", function(){
+    if(!cropState.img) return;
+    var OUT = 480;
+    var ratio = OUT/CROP_SIZE;
+    var out = document.createElement("canvas");
+    out.width = OUT; out.height = OUT;
+    var octx = out.getContext("2d");
+    var d = getCropDisplaySize();
+    var dx = (CROP_SIZE/2 - d.dw/2 + cropState.offsetX)*ratio;
+    var dy = (CROP_SIZE/2 - d.dh/2 + cropState.offsetY)*ratio;
+    octx.drawImage(cropState.img, dx, dy, d.dw*ratio, d.dh*ratio);
+
+    state.commonImgSrc = out.toDataURL("image/png");
+    renderCommonImgPreview();
+    renderCards();
+    closeCropModal();
+  });
+
+  /* ============ PNG export helpers ============ */
+  var FONT_STACK = '"Hiragino Maru Gothic ProN","Yu Gothic",-apple-system,"Segoe UI",sans-serif';
+
+  function roundRect(ctx, x, y, w, h, r){
+    if(typeof r === "number") r = {tl:r, tr:r, br:r, bl:r};
+    ctx.beginPath();
+    ctx.moveTo(x+r.tl, y);
+    ctx.lineTo(x+w-r.tr, y);
+    ctx.arcTo(x+w, y, x+w, y+r.tr, r.tr);
+    ctx.lineTo(x+w, y+h-r.br);
+    ctx.arcTo(x+w, y+h, x+w-r.br, y+h, r.br);
+    ctx.lineTo(x+r.bl, y+h);
+    ctx.arcTo(x, y+h, x, y+h-r.bl, r.bl);
+    ctx.lineTo(x, y+r.tl);
+    ctx.arcTo(x, y, x+r.tl, y, r.tl);
+    ctx.closePath();
+  }
+
+  function truncateToWidth(ctx, text, maxW){
+    if(ctx.measureText(text).width <= maxW) return text;
+    var t = text;
+    while(t.length > 1 && ctx.measureText(t + "…").width > maxW){
+      t = t.slice(0, -1);
+    }
+    return t + "…";
+  }
+
+  function drawStar(ctx, cx, cy, r, points, color, alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha === undefined ? 1 : alpha;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    for(var i=0;i<points*2;i++){
+      var rad = (i % 2 === 0) ? r : r*0.45;
+      var ang = (Math.PI/points)*i - Math.PI/2;
+      var x = cx + Math.cos(ang)*rad, y = cy + Math.sin(ang)*rad;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /* ============ PNG export: single card ============ */
+  function exportCardPng(card){
+    var judged = judgeCard(card);
+    var bgc = getBgColor(state.bgColorKey);
+
+    var W = 900, H = 1150;
+    var canvas = renderCanvas;
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext("2d");
+
+    // background
+    var grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0, "#fffdf7");
+    grad.addColorStop(1, bgc.bg);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,W,H);
+
+    var padL = 60, padR = W-60;
+
+    var y = 56;
+
+    // campaign title banner
+    if(state.campaignTitle){
+      var bannerW = Math.min(W-100, 760), bannerH = 62;
+      var bx = W/2 - bannerW/2, by = y;
+      var bgrad = ctx.createLinearGradient(bx,0,bx+bannerW,0);
+      bgrad.addColorStop(0, "#ffcb3f");
+      bgrad.addColorStop(1, "#e5473c");
+      roundRect(ctx, bx, by, bannerW, bannerH, bannerH/2);
+      ctx.fillStyle = bgrad;
+      ctx.fill();
+
+      ctx.textAlign = "center";
+      ctx.font = "bold 24px " + FONT_STACK;
+      ctx.fillStyle = "#ffffff";
+      var dispTitle = truncateToWidth(ctx, state.campaignTitle, bannerW-90);
+      ctx.fillText(dispTitle, W/2, by+bannerH/2+8);
+
+      drawStar(ctx, bx+26, by+bannerH/2, 8, 5, "#ffffff", 0.9);
+      drawStar(ctx, bx+bannerW-26, by+bannerH/2, 8, 5, "#ffffff", 0.9);
+
+      y = by + bannerH + 26;
+    } else {
+      y += 6;
+    }
+
+    // serial badge
+    ctx.textAlign = "left";
+    ctx.font = "bold 15px " + FONT_STACK;
+    var serialText = serialLabel(card.serial);
+    var serialPadX = 14;
+    var serialW = ctx.measureText(serialText).width + serialPadX*2;
+    roundRect(ctx, padL, y, serialW, 30, 15);
+    ctx.fillStyle = bgc.ink;
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.fillText(serialText, padL + serialW/2, y+20);
+
+    // card name headline
+    y += 58;
+    ctx.textAlign = "center";
+    ctx.font = "bold 42px " + FONT_STACK;
+    ctx.fillStyle = "#7c2219";
+    var dispName = truncateToWidth(ctx, card.name || "（無名カード）", W-140);
+    ctx.fillText(dispName, W/2, y);
+
+    y += 30;
+
+    // status stamp
+    if(judged.bingoCount > 0){
+      y += 10;
+      var stampText = judged.bingoCount === 1 ? "BINGO!" : (judged.bingoCount + " BINGO");
+      ctx.save();
+      ctx.translate(W/2, y+26);
+      ctx.rotate(-0.06);
+      ctx.font = "bold 34px " + FONT_STACK;
+      var stW = ctx.measureText(stampText).width + 60;
+      roundRect(ctx, -stW/2, -30, stW, 60, 30);
+      var sgrad = ctx.createLinearGradient(-stW/2,0,stW/2,0);
+      sgrad.addColorStop(0, "#ffcb3f");
+      sgrad.addColorStop(1, "#e5473c");
+      ctx.fillStyle = sgrad;
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.fillText(stampText, 0, 12);
+      ctx.restore();
+      y += 66;
+    } else if(judged.reach){
+      y += 10;
+      ctx.font = "bold 24px " + FONT_STACK;
+      ctx.fillStyle = "#cf2f27";
+      ctx.textAlign = "center";
+      ctx.fillText("あと1マス！ リーチ", W/2, y+20);
+      y += 44;
+    } else {
+      y += 14;
+    }
+
+    // grid
+    var size = card.size;
+    var gridTop = y + 18;
+    var gridSize = Math.min(W - 140, H - gridTop - 210);
+    var gridLeft = W/2 - gridSize/2;
+    var gap = Math.max(3, gridSize/size*0.06);
+    var cellSize = (gridSize - gap*(size-1)) / size;
+
+    if(card.numbers){
+      for(var r=0;r<size;r++){
+        for(var c=0;c<size;c++){
+          var cx = gridLeft + c*(cellSize+gap);
+          var cy = gridTop + r*(cellSize+gap);
+          var val = card.numbers[r][c];
+          var marked = judged.marks[r][c];
+
+          ctx.save();
+          roundRect(ctx, cx, cy, cellSize, cellSize, cellSize*0.16);
+          if(val === "FREE"){
+            var fgrad = ctx.createLinearGradient(cx,cy,cx+cellSize,cy+cellSize);
+            fgrad.addColorStop(0, "#ffcb3f");
+            fgrad.addColorStop(1, "#f2a300");
+            ctx.fillStyle = fgrad;
+          } else if(marked){
+            ctx.fillStyle = bgc.deep;
+          } else {
+            ctx.fillStyle = "#ffffff";
+          }
+          ctx.fill();
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = "#f4d9a4";
+          ctx.stroke();
+          ctx.restore();
+
+          ctx.textAlign = "center";
+          ctx.fillStyle = (val === "FREE" || marked) ? "#ffffff" : "#3b2c22";
+          var fs = Math.max(11, Math.min(cellSize*0.42, cellSize*0.42));
+          ctx.font = "bold " + fs + "px " + FONT_STACK;
+          var label = (val === "FREE") ? "FREE" : String(val);
+          if(val === "FREE" && cellSize < 70) ctx.font = "bold " + (fs*0.7) + "px " + FONT_STACK;
+          ctx.fillText(label, cx+cellSize/2, cy+cellSize/2+fs*0.35);
+        }
+      }
+    } else {
+      ctx.textAlign = "center";
+      ctx.font = "bold 20px " + FONT_STACK;
+      ctx.fillStyle = "#e2586b";
+      ctx.fillText("数字範囲が不足しているため生成できません", W/2, gridTop+gridSize/2);
+    }
+
+    y = gridTop + gridSize + 46;
+
+    // hashtags
+    ctx.textAlign = "left";
+    ctx.font = "bold 17px " + FONT_STACK;
+    ctx.fillStyle = "#cf2f27";
+    ctx.fillText("#BingoCard", padL, H-64);
+    ctx.fillStyle = "#f2a300";
+    ctx.fillText("#RurupopCarnival", padL, H-38);
+
+    function finish(){
+      canvas.toBlob(function(blob){
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        var stamp = new Date();
+        var pad = function(n){ return n<10 ? "0"+n : ""+n; };
+        var fname = "BingoCard_" + serialText.replace(".", "") + "_" +
+          stamp.getFullYear() + pad(stamp.getMonth()+1) + pad(stamp.getDate()) + "_" +
+          pad(stamp.getHours()) + pad(stamp.getMinutes()) + pad(stamp.getSeconds()) + ".png";
+        a.href = url; a.download = fname;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      }, "image/png");
+    }
+
+    // common image (bottom right circle)
+    if(state.commonImgSrc){
+      var img = new Image();
+      img.onload = function(){
+        var size2 = 150;
+        var cx2 = padR - size2;
+        var cy2 = H - 60 - size2;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx2+size2/2, cy2+size2/2, size2/2, 0, Math.PI*2);
+        ctx.closePath();
+        ctx.clip();
+        var ratio2 = Math.max(size2/img.width, size2/img.height);
+        var iw = img.width*ratio2, ih = img.height*ratio2;
+        ctx.drawImage(img, cx2+(size2-iw)/2, cy2+(size2-ih)/2, iw, ih);
+        ctx.restore();
+        ctx.beginPath();
+        ctx.arc(cx2+size2/2, cy2+size2/2, size2/2, 0, Math.PI*2);
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx2+size2/2, cy2+size2/2, size2/2+3, 0, Math.PI*2);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#ffcb3f";
+        ctx.stroke();
+        finish();
+      };
+      img.onerror = finish;
+      img.src = state.commonImgSrc;
+    } else {
+      finish();
+    }
+  }
+
+  /* ============ init ============ */
+  renderSwatches();
+  renderCommonImgPreview();
+  validateRange();
+  updateAll();
+})();
+</script>
+</body>
+</html>
