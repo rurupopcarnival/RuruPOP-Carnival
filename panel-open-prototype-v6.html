@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel OPEN</title>
+<style>
+  :root{
+    --bg:#DEFCFF;
+    --card:#FFFCF6;
+    --coral:#FFB6A3;
+    --coral-deep:#FF9880;
+    --mint:#BDF2D9;
+    --mint-deep:#7FD8AE;
+    --lemon:#FFE9A8;
+    --lemon-deep:#F6CE5E;
+    --ink:#2E4A52;
+    --ink-soft:#6C8B93;
+    --line:#BCE7EF;
+    --radius:20px;
+    --radius-sm:12px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 10% 6%, #EFFEFF 0%, transparent 42%),
+      radial-gradient(circle at 90% 96%, #CFF7EE 0%, transparent 40%),
+      var(--bg);
+    color:var(--ink);
+    font-family:"Hiragino Maru Gothic ProN","Yu Gothic","Hiragino Sans","Segoe UI",sans-serif;
+    min-height:100vh;
+    padding-bottom:40px;
+  }
+  @media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms !important; transition-duration:.001ms !important;} }
+
+  header{ text-align:center; padding:20px 16px 6px; }
+  header .badge{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--card); border:1px solid var(--line);
+    padding:4px 12px; border-radius:999px; font-size:.68rem;
+    color:var(--ink-soft); letter-spacing:.06em;
+  }
+  header .badge .dot{width:6px;height:6px;border-radius:50%;background:var(--coral-deep);display:inline-block;}
+  header h1{ margin:8px 0 2px; font-size:clamp(1.3rem,4vw,1.8rem); }
+  header h1 em{ font-style:normal; background:linear-gradient(180deg, transparent 58%, var(--lemon) 58%); }
+
+  main{ max-width:640px; margin:0 auto; padding:6px 16px 0; }
+
+  /* ================= PREVIEW（装飾なし・イラストが主役） ================= */
+  .stage-wrap{ margin:10px 0 20px; }
+  .stage-frame{
+    position:relative; border-radius:var(--radius); overflow:hidden;
+    background:#fff;
+    box-shadow:0 5px 0 rgba(108,139,147,0.15), 0 14px 26px rgba(96,150,160,0.16);
+    transition:box-shadow .15s;
+  }
+  .stage-frame.picking{ box-shadow:0 0 0 3px var(--coral-deep), 0 14px 26px rgba(96,150,160,0.16); }
+  .stage{ position:relative; width:100%; aspect-ratio:4/3; background:#EAF9FB; }
+  .stage img.artwork{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+
+  .stage-empty{
+    position:absolute; inset:10px; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:6px; color:var(--ink-soft); font-size:.85rem; text-align:center; padding:20px;
+    border:2px dashed var(--line); border-radius:14px; cursor:pointer;
+    background:repeating-linear-gradient(135deg, #FBFEFF, #FBFEFF 10px, #F3FCFE 10px, #F3FCFE 20px);
+    transition:border-color .15s, background .15s;
+  }
+  .stage-empty:hover, .stage-empty:focus-visible{ border-color:var(--coral-deep); background:#FFF6F3; }
+  .stage-empty strong{ color:var(--ink); font-size:1rem; }
+  .stage-empty span.or{ font-size:.72rem; opacity:.7; }
+  input[type=file]{ display:none; }
+
+  .panel-grid{ position:absolute; inset:0; display:none; }
+  .cell{ position:relative; }
+  .cell .hit{ position:absolute; inset:0; z-index:5; }
+  .cell .frame, .cell .lid, .cell .blur, .cell .tint, .cell .pickmark{ position:absolute; inset:0; }
+  .cell .frame{ box-shadow:inset 0 0 0 1px rgba(46,74,82,0.28); opacity:0; z-index:1; }
+  .cell .lid{
+    background:linear-gradient(160deg, #FFF9F0 0%, #F3E9DA 100%);
+    opacity:0; transition:opacity .2s ease; z-index:2;
+  }
+  .cell .blur{ opacity:0; z-index:2; backdrop-filter:blur(9px); -webkit-backdrop-filter:blur(9px); background:rgba(255,255,255,0.05); }
+  .cell .tint{ opacity:0; z-index:3; transition:opacity .2s ease; }
+  .cell .pickmark{ opacity:0; z-index:7; box-shadow:inset 0 0 0 2px var(--coral-deep); border-radius:3px; transition:opacity .15s; pointer-events:none; }
+
+  .panel-grid.mode-frame .cell .frame{ opacity:1; }
+
+  .panel-grid.mode-group .cell .frame{ opacity:1; }
+  .panel-grid.mode-group .cell.grouped .tint{ opacity:1; }
+  .panel-grid.mode-group .cell.active-target{ cursor:pointer; }
+
+  .panel-grid.mode-operate .cell[data-state="close"] .lid{ opacity:1; }
+  .panel-grid.mode-operate .cell[data-state="preview"] .blur{ opacity:1; }
+  .panel-grid.mode-operate .cell.grouped[data-state="close"] .tint{ opacity:1; }
+  .panel-grid.mode-operate .cell.pick-target .pickmark{ opacity:.9; }
+  .panel-grid.mode-operate .cell.pick-anchor .pickmark{ opacity:1; box-shadow:inset 0 0 0 3px var(--coral-deep); }
+
+  .label-layer{ position:absolute; inset:0; display:none; z-index:6; pointer-events:none; }
+  .group-label{ position:absolute; display:flex; align-items:center; justify-content:center; padding:2%; }
+  .group-label .chip{
+    background:rgba(255,255,255,0.9); border:1.5px solid; border-radius:9px;
+    padding:3px 8px; text-align:center; line-height:1.3; max-width:100%;
+    box-shadow:0 1px 3px rgba(46,74,82,0.15);
+  }
+  .group-label .gname{ display:block; font-weight:700; color:var(--ink); font-size:clamp(.6rem,2vw,.78rem); }
+  .group-label .prog{ display:block; color:var(--ink-soft); font-size:clamp(.55rem,1.8vw,.7rem); }
+  .group-label.size-medium .gname{ font-size:clamp(.78rem,2.7vw,1.02rem); }
+  .group-label.size-medium .prog{ font-size:clamp(.7rem,2.3vw,.9rem); }
+  .group-label.size-large .gname{ font-size:clamp(.98rem,3.5vw,1.3rem); }
+  .group-label.size-large .prog{ font-size:clamp(.86rem,3vw,1.12rem); }
+
+  .stage-legend{ display:flex; gap:12px; flex-wrap:wrap; padding:10px 2px 0; font-size:.7rem; color:var(--ink-soft); }
+  .stage-legend .lg{ display:flex; align-items:center; gap:5px; }
+  .stage-legend i{ width:10px;height:10px;border-radius:3px;display:inline-block; }
+  .lg.close i{background:#F3E9DA;} .lg.preview i{background:#fff; box-shadow:inset 0 0 0 1px var(--line);} .lg.open i{background:var(--mint);}
+  .stage-hint{ font-size:.7rem; color:var(--ink-soft); margin-top:4px; min-height:1.2em; }
+  .stage-hint.picking{ color:var(--coral-deep); font-weight:700; }
+
+  /* ================= WIZARD ================= */
+  .wizard{
+    background:var(--card); border-radius:var(--radius);
+    box-shadow:0 4px 0 rgba(108,139,147,0.12), 0 10px 22px rgba(96,150,160,0.1);
+    padding:18px 20px 20px;
+  }
+  .step-tabs{ display:flex; gap:6px; margin-bottom:16px; }
+  .step-tab{
+    flex:1; text-align:center; padding:8px 4px; border-radius:10px;
+    font-size:.72rem; color:var(--ink-soft); background:#F3FCFE; cursor:pointer;
+    border:1px solid transparent;
+  }
+  .step-tab.active{ background:var(--coral); color:var(--ink); font-weight:700; }
+  .step-tab.done{ background:var(--mint); color:#1E7A54; }
+
+  .step-panel{ display:none; }
+  .step-panel.active{ display:block; }
+  .step-panel h2{ margin:0 0 4px; font-size:1rem; }
+  .step-panel .desc{ margin:0 0 16px; font-size:.8rem; color:var(--ink-soft); line-height:1.6; }
+
+  .file-picked-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#FBFEFF; border:1px solid var(--line); border-radius:var(--radius-sm); padding:10px 12px; }
+  .file-picked-row .fname{ font-size:.8rem; color:var(--ink); flex:1; min-width:120px; word-break:break-all; }
+  .file-note{ font-size:.7rem; color:var(--ink-soft); margin-top:10px; }
+  .settings-io-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+  .label-size-toggle{ display:flex; gap:6px; }
+  .label-size-toggle button{
+    padding:5px 14px; border-radius:999px; border:1px solid var(--line);
+    background:#fff; font-size:.72rem; color:var(--ink-soft); cursor:pointer;
+  }
+  .label-size-toggle button.active{ background:var(--coral); border-color:var(--coral-deep); color:var(--ink); font-weight:700; }
+  .load-notice{
+    background:#FFF3EF; border:1px solid var(--coral-deep); color:#7A3D28;
+    border-radius:var(--radius-sm); padding:10px 12px; font-size:.78rem; margin-bottom:12px;
+  }
+
+  .field-row{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:4px; }
+  .field{ flex:1; min-width:110px; }
+  .field label{ display:block; font-size:.76rem; color:var(--ink-soft); margin-bottom:6px; }
+  .field input[type=number], .field input[type=text]{
+    width:100%; padding:9px 10px; border-radius:10px; border:1px solid var(--line);
+    background:#fff; font-size:.92rem; color:var(--ink);
+  }
+  .field input:focus-visible{ outline:2px solid var(--coral-deep); outline-offset:1px; }
+
+  .group-chips{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .chip{
+    padding:7px 14px; border-radius:999px; border:1px solid var(--line);
+    background:#fff; font-size:.78rem; color:var(--ink-soft); cursor:pointer;
+    display:flex; align-items:center; gap:6px;
+  }
+  .chip .sw{ width:9px;height:9px;border-radius:50%; }
+  .chip.active{ background:#fff; border-color:var(--ink); color:var(--ink); font-weight:700; }
+  .chip.add{ border-style:dashed; }
+  .group-hint{
+    font-size:.76rem; color:var(--ink-soft); background:#FBFEFF; border:1px solid var(--line);
+    border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:4px;
+  }
+  .group-count{ font-size:.72rem; color:var(--ink-soft); margin-top:8px; }
+
+  .cond-card{ border:1px solid var(--line); border-radius:var(--radius-sm); padding:14px 16px; margin-bottom:12px; background:#FBFEFF; }
+  .cond-top{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .cond-top .sw{ width:11px;height:11px;border-radius:50%; flex-shrink:0; }
+  .cond-top input[type=text].cname{
+    border:none; background:transparent; font-weight:700; font-size:.9rem; color:var(--ink);
+    border-bottom:1px solid var(--line); padding:2px; flex:1; min-width:100px;
+  }
+  .cond-top input:focus-visible{ outline:none; border-color:var(--coral-deep); }
+  .cond-switches{ display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
+  .cond-switches label{ display:flex; align-items:center; gap:8px; font-size:.76rem; color:var(--ink-soft); cursor:pointer; }
+  .cond-switches input{ width:15px; height:15px; }
+  .cond-nums{ display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  .cond-nums .num-field{ display:flex; align-items:center; gap:6px; font-size:.76rem; color:var(--ink-soft); }
+  .cond-nums input[type=number]{ width:66px; padding:5px 7px; border-radius:8px; border:1px solid var(--line); }
+  .progress-track{ height:7px; border-radius:6px; background:#EFEAE0; overflow:hidden; margin-bottom:10px; }
+  .progress-fill{ height:100%; border-radius:6px; transition:width .25s ease; }
+  .state-toggle{ display:flex; gap:6px; margin-bottom:10px; }
+  .state-toggle button{
+    flex:1; padding:6px 0; border-radius:8px; border:1px solid var(--line);
+    background:#fff; font-size:.72rem; color:var(--ink-soft); cursor:pointer;
+  }
+  .state-toggle button.active.close{background:#F3E9DA; border-color:#D8C6A3; color:#7A6540;}
+  .state-toggle button.active.preview{background:var(--lemon); border-color:var(--lemon-deep); color:#7A5C10;}
+  .state-toggle button.active.open{background:var(--mint); border-color:var(--mint-deep); color:#1E7A54;}
+
+  .label-pos-row{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    padding-top:10px; margin-top:2px; border-top:1px dashed var(--line);
+    font-size:.74rem; color:var(--ink-soft);
+  }
+  .label-pos-row.no-top{ border-top:none; padding-top:0; margin-top:0; }
+  .label-pos-row .lp-status-text{ font-weight:700; color:var(--ink); }
+  .btn-sm{ padding:6px 12px; font-size:.7rem; border-radius:999px; }
+
+  .nav-row{ display:flex; justify-content:space-between; gap:10px; margin-top:18px; }
+  .btn{ border:none; border-radius:999px; padding:11px 22px; font-size:.85rem; font-weight:700; cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,0.08); }
+  .btn:active{ transform:translateY(2px); box-shadow:none; }
+  .btn-primary{ background:var(--coral-deep); color:#fff; }
+  .btn-secondary{ background:#fff; color:var(--ink); border:1px solid var(--line); }
+  .btn[disabled]{ opacity:.35; cursor:not-allowed; }
+
+  footer.note{ max-width:640px; margin:16px auto 0; padding:0 16px; text-align:center; font-size:.68rem; color:var(--ink-soft); opacity:.8; }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(46,74,82,0.38);
+    display:none; align-items:center; justify-content:center; padding:20px; z-index:50;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal-card{
+    background:var(--card); border-radius:18px; padding:20px; max-width:320px; width:100%;
+    box-shadow:0 10px 30px rgba(0,0,0,0.2);
+  }
+  .modal-card h3{ margin:0 0 8px; font-size:.95rem; }
+  .modal-card p{ margin:0 0 18px; font-size:.82rem; color:var(--ink-soft); line-height:1.6; white-space:pre-line; }
+  .modal-actions{ display:flex; gap:10px; justify-content:flex-end; }
+  .header-actions{ text-align:center; margin-top:12px; }
+
+  @media (max-width:480px){
+    .wizard{ padding:14px; }
+    .step-tab{ font-size:.64rem; padding:7px 2px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="badge"><span class="dot"></span>RuruPOP Carnival</span>
+  <h1>Panel <em>OPEN</em></h1>
+  <div class="header-actions">
+    <button class="btn btn-secondary btn-sm" id="newPanelBtn" type="button">🔄 新しいパネルを作成</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ===== PREVIEW ===== -->
+  <div class="stage-wrap">
+    <div class="stage-frame" id="stageFrame">
+      <div class="stage" id="stage">
+        <img class="artwork" id="artwork" alt="プレビュー画像" style="display:none;">
+        <label class="stage-empty" id="stageEmpty" for="fileInput" tabindex="0">
+          <strong>画像をドラッグ＆ドロップ</strong>
+          <span class="or">または、クリックして画像を選択</span>
+        </label>
+        <input id="fileInput" type="file" accept=".png,.jpg,.jpeg,.webp">
+        <div class="panel-grid" id="panelGrid"></div>
+        <div class="label-layer" id="labelLayer"></div>
+      </div>
+    </div>
+    <div class="stage-legend">
+      <span class="lg close"><i></i>CLOSE</span>
+      <span class="lg preview"><i></i>ぼかし</span>
+      <span class="lg open"><i></i>OPEN</span>
+    </div>
+    <p class="stage-hint" id="stageHint"></p>
+  </div>
+
+  <!-- ===== WIZARD ===== -->
+  <div class="wizard">
+    <div class="step-tabs" id="stepTabs">
+      <div class="step-tab" data-step="1">STEP1<br>画像</div>
+      <div class="step-tab" data-step="2">STEP2<br>ピース</div>
+      <div class="step-tab" data-step="3">STEP3<br>条件エリア</div>
+      <div class="step-tab" data-step="4">STEP4<br>運用</div>
+    </div>
+
+    <!-- STEP1 -->
+    <section class="step-panel" data-step="1">
+      <h2>画像をアップロード</h2>
+      <p class="desc">上のプレビューエリアに画像をドラッグ＆ドロップ、またはクリックして選択してください。画像はサーバーへ送信されず、加工・トリミングもしません。対応形式：PNG / JPG / WEBP</p>
+      <div class="load-notice" id="loadNotice" style="display:none;">設定を読み込みました。続けて元画像を選択してください。</div>
+      <div class="file-picked-row" id="filePickedRow" style="display:none;">
+        <span class="fname" id="filePicked"></span>
+        <button class="btn btn-secondary" id="clearImageBtn" type="button">画像をクリア</button>
+      </div>
+      <div class="settings-io-row">
+        <button class="btn btn-secondary" id="loadSettingsBtn" type="button">📂 設定ファイルを読み込む（JSON）</button>
+        <input id="settingsFileInput" type="file" accept="application/json,.json" style="display:none;">
+      </div>
+      <p class="file-note">※ 以前保存した設定（JSON）を読み込むと、ピース数・条件・状態が復元されます。画像は含まれないため、この後で元画像を選び直してください。</p>
+    </section>
+
+    <!-- STEP2 -->
+    <section class="step-panel" data-step="2">
+      <h2>ピース設定</h2>
+      <p class="desc">横・縦のピース数を決めます。ここではピースの配置を確認するため外枠のみ表示し、画像はそのまま見える状態にしています（閉じた表示にはなりません）。</p>
+      <div class="field-row">
+        <div class="field">
+          <label for="cols">横ピース数（1〜10）</label>
+          <input type="number" id="cols" min="1" max="10" value="5">
+        </div>
+        <div class="field">
+          <label for="rows">縦ピース数（1〜10）</label>
+          <input type="number" id="rows" min="1" max="10" value="5">
+        </div>
+      </div>
+      <p class="file-note">※ Version1はピース形状「四角」のみです。</p>
+    </section>
+
+    <!-- STEP3 -->
+    <section class="step-panel" data-step="3">
+      <h2>条件エリア設定</h2>
+      <p class="desc">編集する条件エリアを選び、上のプレビュー内のピースをクリックして登録／解除してください（ドラッグ不要）。登録済みのピースは枠＝条件エリアカラー、内側＝同じ色の半透明で表示されます。</p>
+      <div class="group-chips" id="groupChips"></div>
+      <div class="group-hint">条件エリアを選択中の状態で、プレビューのピースをタップすると色がつきます。もう一度タップで解除されます。</div>
+      <div class="group-count" id="groupCount"></div>
+    </section>
+
+    <!-- STEP4 -->
+    <section class="step-panel" data-step="4">
+      <h2>運用画面（条件・状態）</h2>
+      <p class="desc">条件ごとに詳細と状態を設定します。条件ラベルは通常おすすめ位置へ自動配置されますが、重なる場合は条件ごとに表示セルを手動で選び直せます。</p>
+      <div class="settings-io-row">
+        <button class="btn btn-secondary" id="saveSettingsBtn" type="button">⚙ 設定を保存する（JSON）</button>
+      </div>
+      <p class="file-note" style="margin-top:0;margin-bottom:14px;">※ 画像は含まれません。ピース数・条件・状態のみを保存します。</p>
+      <div id="condCards"></div>
+    </section>
+
+    <div class="nav-row">
+      <button class="btn btn-secondary" id="prevBtn">← 戻る</button>
+      <button class="btn btn-primary" id="nextBtn">次へ →</button>
+    </div>
+  </div>
+
+</main>
+
+<footer class="note">※ 画像はサーバーへ送信されません。設定（JSON）と画像は別々に保存・管理されます。</footer>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-card">
+    <h3 id="modalTitle">未設定のピースがあります</h3>
+    <p id="modalMessage"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="modalCancel">キャンセル</button>
+      <button class="btn btn-primary" id="modalConfirm">条件エリア化して進む</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="filenameModalOverlay">
+  <div class="modal-card">
+    <h3>設定ファイルを保存</h3>
+    <p>保存するファイル名を入力してください。</p>
+    <input type="text" id="filenameInput" style="width:100%;padding:9px 10px;border-radius:10px;border:1px solid var(--line);font-size:.9rem;color:var(--ink);margin-bottom:16px;">
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="filenameCancel">キャンセル</button>
+      <button class="btn btn-primary" id="filenameConfirm">保存する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const palette = ['#FF9880','#7FD8AE','#F6CE5E','#8FB8FF','#E39BFF','#FF8FA3','#9AD4E0','#C8D97A'];
+  let currentStep = 1;
+  let cols = 5, rows = 5;
+  let hasImage = false;
+  let groups = [ newGroup(1) ];
+  let nextGroupId = 2;
+  let activeGroupId = 1;
+  let labelPickGroupId = null; // ラベル表示セルを選択中のグループID（nullなら選択モードOFF）
+
+  function newGroup(id){
+    return {
+      id,
+      name: '条件' + id,
+      color: palette[(id-1) % palette.length],
+      cells: new Set(),
+      showName: true,
+      useNumbers: true,
+      labelAnchor: null, // nullなら自動（バウンディングボックス中心）。数値ならそのセル位置に手動固定
+      labelSize: 'small', // small=小 / medium=中 / large=大
+      condition: { name:'', goal:100, current:0, state:'close' }
+    };
+  }
+  function getGroup(id){ return groups.find(g=>g.id===id); }
+  function groupOfCell(idx){ return groups.find(g=>g.cells.has(idx)) || null; }
+  function hexToRgba(hex, a){
+    const v = hex.replace('#','');
+    const r = parseInt(v.substring(0,2),16), g = parseInt(v.substring(2,4),16), b = parseInt(v.substring(4,6),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+  function escapeHtml(str){
+    return str.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+
+  const stageFrame = document.getElementById('stageFrame');
+  const stage = document.getElementById('stage');
+  const artwork = document.getElementById('artwork');
+  const stageEmpty = document.getElementById('stageEmpty');
+  const panelGrid = document.getElementById('panelGrid');
+  const labelLayer = document.getElementById('labelLayer');
+  const stageHint = document.getElementById('stageHint');
+  const fileInput = document.getElementById('fileInput');
+  const filePickedRow = document.getElementById('filePickedRow');
+  const filePicked = document.getElementById('filePicked');
+  const clearImageBtn = document.getElementById('clearImageBtn');
+  const loadNotice = document.getElementById('loadNotice');
+  const loadSettingsBtn = document.getElementById('loadSettingsBtn');
+  const settingsFileInput = document.getElementById('settingsFileInput');
+  const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+  const colsInput = document.getElementById('cols');
+  const rowsInput = document.getElementById('rows');
+  const groupChips = document.getElementById('groupChips');
+  const groupCountEl = document.getElementById('groupCount');
+  const condCards = document.getElementById('condCards');
+  const stepTabs = document.getElementById('stepTabs');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalMessage = document.getElementById('modalMessage');
+  const modalCancel = document.getElementById('modalCancel');
+  const modalConfirm = document.getElementById('modalConfirm');
+  const filenameModalOverlay = document.getElementById('filenameModalOverlay');
+  const filenameInput = document.getElementById('filenameInput');
+  const filenameCancel = document.getElementById('filenameCancel');
+  const filenameConfirm = document.getElementById('filenameConfirm');
+
+  // alert()/prompt() はプレビュー環境によってはブロックされ、ボタンが反応しなくなることがあるため使用しない
+  function toast(message){
+    let el = document.getElementById('appToast');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'appToast';
+      el.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#2E4A52;color:#fff;padding:10px 18px;border-radius:999px;font-size:.8rem;z-index:100;box-shadow:0 4px 14px rgba(0,0,0,0.25);opacity:0;transition:opacity .2s;max-width:88vw;text-align:center;';
+      document.body.appendChild(el);
+    }
+    el.textContent = message;
+    el.style.opacity = '1';
+    clearTimeout(el._t);
+    el._t = setTimeout(()=>{ el.style.opacity = '0'; }, 2800);
+  }
+
+  let filenameResolve = null;
+  function askFilename(defaultName){
+    return new Promise(resolve=>{
+      filenameResolve = resolve;
+      filenameInput.value = defaultName;
+      filenameModalOverlay.classList.add('open');
+      setTimeout(()=>{ filenameInput.focus(); filenameInput.select(); }, 0);
+    });
+  }
+  function closeFilenameModal(result){
+    filenameModalOverlay.classList.remove('open');
+    const r = filenameResolve;
+    filenameResolve = null;
+    if(r) r(result);
+  }
+  filenameCancel.addEventListener('click', ()=> closeFilenameModal(null));
+  filenameConfirm.addEventListener('click', ()=> closeFilenameModal(filenameInput.value.trim() || null));
+  filenameInput.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ e.preventDefault(); closeFilenameModal(filenameInput.value.trim() || null); }
+    if(e.key==='Escape'){ e.preventDefault(); closeFilenameModal(null); }
+  });
+
+  let modalConfirmHandler = null;
+  function openModal(title, message, onConfirm, confirmLabel){
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+    modalConfirmHandler = onConfirm;
+    modalConfirm.textContent = confirmLabel;
+    modalOverlay.classList.add('open');
+  }
+  function closeModal(){ modalOverlay.classList.remove('open'); modalConfirmHandler = null; }
+  modalCancel.addEventListener('click', closeModal);
+  modalConfirm.addEventListener('click', ()=>{
+    const fn = modalConfirmHandler;
+    closeModal();
+    if(fn) fn();
+  });
+
+  function loadImageFile(file){
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      artwork.onload = ()=>{
+        stage.style.aspectRatio = `${artwork.naturalWidth} / ${artwork.naturalHeight}`;
+      };
+      artwork.src = ev.target.result;
+      artwork.style.display = 'block';
+      stageEmpty.style.display = 'none';
+      hasImage = true;
+      filePicked.textContent = '選択中の画像：' + file.name;
+      filePickedRow.style.display = 'flex';
+      loadNotice.style.display = 'none';
+      buildGrid();
+      updatePreviewMode();
+    };
+    reader.readAsDataURL(file);
+  }
+  fileInput.addEventListener('change', e=> loadImageFile(e.target.files[0]));
+  stageEmpty.addEventListener('keydown', e=>{
+    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); fileInput.click(); }
+  });
+  stageEmpty.addEventListener('dragover', e=> e.preventDefault());
+  stageEmpty.addEventListener('drop', e=>{
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if(file) loadImageFile(file);
+  });
+  clearImageBtn.addEventListener('click', ()=>{
+    hasImage = false;
+    artwork.src = '';
+    artwork.style.display = 'none';
+    stageEmpty.style.display = 'flex';
+    stage.style.aspectRatio = '4/3';
+    fileInput.value = '';
+    filePickedRow.style.display = 'none';
+    panelGrid.style.display = 'none';
+  });
+
+  /* ---------- 設定保存・設定読込（JSON／画像は含まない） ---------- */
+  function downloadBlob(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function saveSettingsJSON(){
+    const data = {
+      version: 1,
+      cols, rows,
+      nextGroupId,
+      activeGroupId,
+      groups: groups.map(g=>({
+        id: g.id,
+        name: g.name,
+        color: g.color,
+        cells: Array.from(g.cells),
+        showName: g.showName,
+        useNumbers: g.useNumbers,
+        labelAnchor: g.labelAnchor,
+        labelSize: g.labelSize,
+        condition: {
+          name: g.condition.name,
+          goal: g.condition.goal,
+          current: g.condition.current,
+          state: g.condition.state
+        }
+      }))
+    };
+    const jsonStr = JSON.stringify(data, null, 2);
+    const suggested = 'panel-open-settings.json';
+
+    try{
+      if(window.showSaveFilePicker){
+        try{
+          const handle = await window.showSaveFilePicker({
+            suggestedName: suggested,
+            types: [{ description:'Panel OPEN 設定ファイル', accept:{'application/json':['.json']} }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(jsonStr);
+          await writable.close();
+          toast('設定を保存しました');
+          return;
+        }catch(err){
+          if(err && err.name === 'AbortError') return; // ユーザーがキャンセルした場合は何もしない
+          // それ以外のエラーは下の方法にフォールバック
+        }
+      }
+      let filename = await askFilename(suggested);
+      if(!filename) return; // キャンセル
+      if(!/\.json$/i.test(filename)) filename += '.json';
+      downloadBlob(new Blob([jsonStr], {type:'application/json'}), filename);
+      toast('設定を保存しました：' + filename);
+    }catch(err){
+      toast('保存に失敗しました。もう一度お試しください。');
+    }
+  }
+  saveSettingsBtn.addEventListener('click', saveSettingsJSON);
+
+  function loadSettingsJSON(file){
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      let data;
+      try{ data = JSON.parse(ev.target.result); }
+      catch(err){ toast('設定ファイルの読み込みに失敗しました。ファイル形式をご確認ください。'); return; }
+      if(!data || !Array.isArray(data.groups)){ toast('この設定ファイルは読み込めませんでした。'); return; }
+
+      cols = Math.min(10, Math.max(1, parseInt(data.cols) || 5));
+      rows = Math.min(10, Math.max(1, parseInt(data.rows) || 5));
+      colsInput.value = cols; rowsInput.value = rows;
+
+      groups = data.groups.map(gd => ({
+        id: gd.id,
+        name: gd.name || ('条件' + gd.id),
+        color: gd.color || palette[(gd.id-1) % palette.length],
+        cells: new Set(Array.isArray(gd.cells) ? gd.cells : []),
+        showName: gd.showName !== false,
+        useNumbers: gd.useNumbers !== false,
+        labelAnchor: (typeof gd.labelAnchor === 'number') ? gd.labelAnchor : null,
+        labelSize: ['small','medium','large'].includes(gd.labelSize) ? gd.labelSize : 'small',
+        condition: {
+          name: (gd.condition && gd.condition.name) || '',
+          goal: (gd.condition && gd.condition.goal != null) ? gd.condition.goal : 100,
+          current: (gd.condition && gd.condition.current != null) ? gd.condition.current : 0,
+          state: (gd.condition && gd.condition.state) || 'close'
+        }
+      }));
+      if(groups.length === 0) groups = [ newGroup(1) ];
+      nextGroupId = data.nextGroupId || (Math.max(...groups.map(g=>g.id)) + 1);
+      activeGroupId = groups.some(g=>g.id===data.activeGroupId) ? data.activeGroupId : groups[0].id;
+      labelPickGroupId = null;
+
+      // 画像は設定に含まれないため、未設定状態に戻して選び直しを促す
+      hasImage = false;
+      artwork.src = '';
+      artwork.style.display = 'none';
+      stageEmpty.style.display = 'flex';
+      stage.style.aspectRatio = '4/3';
+      fileInput.value = '';
+      filePickedRow.style.display = 'none';
+
+      buildGrid();
+      renderGroupChips();
+      renderCondCards();
+      showStep(1);
+      loadNotice.style.display = 'block';
+    };
+    reader.readAsText(file);
+  }
+  loadSettingsBtn.addEventListener('click', ()=> settingsFileInput.click());
+  settingsFileInput.addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if(file) loadSettingsJSON(file);
+    settingsFileInput.value = '';
+  });
+
+  /* ---------- 現在の状態をPNG画像として保存 ---------- */
+  function roundRectPath(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  function exportPreviewPNG(){
+    if(!hasImage){ toast('画像が未設定です。STEP1で画像をアップロードしてください。'); return; }
+
+    const W = artwork.naturalWidth, H = artwork.naturalHeight;
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(artwork, 0, 0, W, H);
+
+    const blurPx = Math.max(10, W*0.015);
+    const blurCanvas = document.createElement('canvas');
+    blurCanvas.width = W; blurCanvas.height = H;
+    const bctx = blurCanvas.getContext('2d');
+    bctx.filter = `blur(${blurPx}px)`;
+    bctx.drawImage(artwork, 0, 0, W, H);
+
+    const cellW = W/cols, cellH = H/rows;
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const idx = r*cols + c;
+        const g = groupOfCell(idx);
+        const state = g ? g.condition.state : 'close';
+        const x = c*cellW, y = r*cellH;
+        if(state === 'close'){
+          const grad = ctx.createLinearGradient(x, y, x+cellW, y+cellH);
+          grad.addColorStop(0, '#FFF9F0'); grad.addColorStop(1, '#F3E9DA');
+          ctx.fillStyle = grad;
+          ctx.fillRect(x, y, cellW, cellH);
+          if(g){
+            ctx.fillStyle = hexToRgba(g.color, 0.35);
+            ctx.fillRect(x, y, cellW, cellH);
+            const lw = Math.max(1, cellW*0.03);
+            ctx.lineWidth = lw;
+            ctx.strokeStyle = g.color;
+            ctx.strokeRect(x+lw/2, y+lw/2, cellW-lw, cellH-lw);
+          }
+        } else if(state === 'preview'){
+          ctx.drawImage(blurCanvas, x, y, cellW, cellH, x, y, cellW, cellH);
+        }
+      }
+    }
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    groups.forEach(g=>{
+      if(g.cells.size === 0) return;
+      const nameText = g.showName ? (g.condition.name || g.name) : '';
+      const progText = g.useNumbers ? `${g.condition.current} / ${g.condition.goal}` : '';
+      if(!nameText && !progText) return;
+
+      const { minR, maxR, minC, maxC } = anchorRectFor(g);
+      const rx = minC*cellW, ry = minR*cellH, rw = (maxC-minC+1)*cellW, rh = (maxR-minR+1)*cellH;
+      const cx = rx + rw/2, cy = ry + rh/2;
+
+      const gSize = g.labelSize || 'small';
+      const sizeScale = gSize==='large' ? 1.7 : (gSize==='medium' ? 1.35 : 1);
+      const nameFontSize = Math.max(14, W*0.02) * sizeScale;
+      const progFontSize = Math.max(11, W*0.016) * sizeScale;
+      const lines = [];
+      if(nameText) lines.push({ text:nameText, font:`700 ${nameFontSize}px "Hiragino Maru Gothic ProN","Yu Gothic",sans-serif`, color:'#2E4A52' });
+      if(progText) lines.push({ text:progText, font:`400 ${progFontSize}px "Hiragino Maru Gothic ProN","Yu Gothic",sans-serif`, color:'#6C8B93' });
+
+      let maxW = 0;
+      lines.forEach(l=>{ ctx.font = l.font; const w = ctx.measureText(l.text).width; if(w>maxW) maxW=w; });
+      const padX = nameFontSize*0.6, padY = nameFontSize*0.4;
+      const lineH = nameFontSize*1.25;
+      const chipW = maxW + padX*2, chipH = lines.length*lineH + padY*2;
+      const chipX = cx - chipW/2, chipY = cy - chipH/2;
+
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      roundRectPath(ctx, chipX, chipY, chipW, chipH, 10);
+      ctx.fill();
+      ctx.lineWidth = Math.max(1.5, nameFontSize*0.08);
+      ctx.strokeStyle = g.color;
+      roundRectPath(ctx, chipX, chipY, chipW, chipH, 10);
+      ctx.stroke();
+
+      let ly = chipY + padY + lineH/2;
+      lines.forEach(l=>{
+        ctx.font = l.font; ctx.fillStyle = l.color;
+        ctx.fillText(l.text, cx, ly);
+        ly += lineH;
+      });
+    });
+
+    canvas.toBlob(blob=>{
+      if(blob) downloadBlob(blob, 'panel-open.png');
+    }, 'image/png');
+  }
+
+  function clampGrid(){
+    cols = Math.min(10, Math.max(1, parseInt(colsInput.value) || 1));
+    rows = Math.min(10, Math.max(1, parseInt(rowsInput.value) || 1));
+    colsInput.value = cols; rowsInput.value = rows;
+  }
+  colsInput.addEventListener('input', ()=>{ clampGrid(); buildGrid(); });
+  rowsInput.addEventListener('input', ()=>{ clampGrid(); buildGrid(); });
+
+  function buildGrid(){
+    panelGrid.innerHTML = '';
+    panelGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    panelGrid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+    panelGrid.style.gap = '0';
+
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const idx = r*cols + c;
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.index = idx;
+        cell.innerHTML = `
+          <div class="frame"></div>
+          <div class="tint"></div>
+          <div class="lid"></div>
+          <div class="blur"></div>
+          <div class="pickmark"></div>
+          <div class="hit"></div>`;
+        cell.querySelector('.hit').addEventListener('click', ()=> onCellClick(idx));
+        panelGrid.appendChild(cell);
+      }
+    }
+    refreshCellVisuals();
+    updatePreviewMode();
+  }
+
+  function onCellClick(idx){
+    // ラベル表示セルの選択モード中は、対象グループのセルをタップすると確定する
+    if(labelPickGroupId !== null){
+      const g = getGroup(labelPickGroupId);
+      if(g && g.cells.has(idx)){
+        g.labelAnchor = idx;
+        labelPickGroupId = null;
+        refreshCellVisuals();
+        renderCondCards();
+        updateStageHint();
+      }
+      return;
+    }
+    if(currentStep !== 3) return;
+    const g = getGroup(activeGroupId);
+    if(!g) return;
+    groups.forEach(gr=>{ if(gr.id!==g.id) gr.cells.delete(idx); }); // 1ピース=1グループ
+    if(g.cells.has(idx)) g.cells.delete(idx); else g.cells.add(idx);
+    refreshCellVisuals();
+    renderGroupCount();
+  }
+
+  function ungroupedIndices(){
+    const total = cols*rows;
+    const list = [];
+    for(let i=0;i<total;i++){ if(!groupOfCell(i)) list.push(i); }
+    return list;
+  }
+
+  function refreshCellVisuals(){
+    document.querySelectorAll('.cell').forEach(cellEl=>{
+      const idx = parseInt(cellEl.dataset.index);
+      const g = groupOfCell(idx);
+      if(g){
+        cellEl.classList.add('grouped');
+        const tint = cellEl.querySelector('.tint');
+        tint.style.background = hexToRgba(g.color, 0.35);
+        tint.style.boxShadow = `inset 0 0 0 2px ${g.color}`;
+        cellEl.dataset.state = g.condition.state;
+      } else {
+        cellEl.classList.remove('grouped');
+        cellEl.dataset.state = 'close';
+      }
+      cellEl.classList.toggle('active-target', currentStep===3);
+
+      const pickGroup = labelPickGroupId !== null ? getGroup(labelPickGroupId) : null;
+      cellEl.classList.toggle('pick-target', !!(pickGroup && pickGroup.cells.has(idx)));
+      cellEl.classList.toggle('pick-anchor', !!(pickGroup && pickGroup.labelAnchor===idx));
+    });
+    stageFrame.classList.toggle('picking', labelPickGroupId !== null);
+    renderLabelLayer();
+  }
+
+  function anchorRectFor(g){
+    if(g.labelAnchor !== null && g.cells.has(g.labelAnchor)){
+      const r = Math.floor(g.labelAnchor/cols), c = g.labelAnchor % cols;
+      return { minR:r, maxR:r, minC:c, maxC:c };
+    }
+    let minR=Infinity, maxR=-Infinity, minC=Infinity, maxC=-Infinity;
+    g.cells.forEach(idx=>{
+      const r = Math.floor(idx/cols), c = idx % cols;
+      if(r<minR) minR=r; if(r>maxR) maxR=r;
+      if(c<minC) minC=c; if(c>maxC) maxC=c;
+    });
+    return { minR, maxR, minC, maxC };
+  }
+
+  function renderLabelLayer(){
+    labelLayer.innerHTML = '';
+    if(currentStep !== 4 || !hasImage){ labelLayer.style.display = 'none'; return; }
+    labelLayer.style.display = 'block';
+    groups.forEach(g=>{
+      if(g.cells.size === 0) return;
+      const nameText = g.showName ? (g.condition.name || g.name) : '';
+      const progText = g.useNumbers ? `${g.condition.current} / ${g.condition.goal}` : '';
+      if(!nameText && !progText) return;
+
+      const { minR, maxR, minC, maxC } = anchorRectFor(g);
+      const box = document.createElement('div');
+      box.className = 'group-label size-' + (g.labelSize || 'small');
+      box.style.left = (minC/cols*100) + '%';
+      box.style.top = (minR/rows*100) + '%';
+      box.style.width = ((maxC-minC+1)/cols*100) + '%';
+      box.style.height = ((maxR-minR+1)/rows*100) + '%';
+      box.innerHTML = `<span class="chip" style="border-color:${g.color}">`
+        + (nameText ? `<span class="gname">${escapeHtml(nameText)}</span>` : '')
+        + (progText ? `<span class="prog">${escapeHtml(progText)}</span>` : '')
+        + `</span>`;
+      labelLayer.appendChild(box);
+    });
+  }
+
+  function updateStageHint(){
+    if(labelPickGroupId !== null){
+      const g = getGroup(labelPickGroupId);
+      stageHint.textContent = `「${g ? (g.condition.name || g.name) : ''}」のラベルを表示したいピースをタップしてください`;
+      stageHint.classList.add('picking');
+      return;
+    }
+    stageHint.classList.remove('picking');
+    const hints = {
+      1:'',
+      2:'外枠のみ表示中です。画像はそのまま見えています（配置確認用）。',
+      3:'条件エリアを選んでピースをタップすると登録／解除できます。',
+      4:'ここからはCLOSE / ぼかし / OPENの状態が実際に反映されます。'
+    };
+    stageHint.textContent = hints[currentStep] || '';
+  }
+
+  function updatePreviewMode(){
+    const show = hasImage && currentStep >= 2;
+    panelGrid.style.display = show ? 'grid' : 'none';
+    panelGrid.classList.remove('mode-frame','mode-group','mode-operate');
+    if(currentStep===2) panelGrid.classList.add('mode-frame');
+    else if(currentStep===3) panelGrid.classList.add('mode-group');
+    else if(currentStep===4) panelGrid.classList.add('mode-operate');
+    updateStageHint();
+    renderLabelLayer();
+  }
+
+  function renderGroupChips(){
+    groupChips.innerHTML = '';
+    groups.forEach(g=>{
+      const chip = document.createElement('div');
+      chip.className = 'chip' + (g.id===activeGroupId ? ' active' : '');
+      chip.innerHTML = `<span class="sw" style="background:${g.color}"></span>${g.name}`;
+      chip.addEventListener('click', ()=>{ activeGroupId = g.id; renderGroupChips(); refreshCellVisuals(); });
+      groupChips.appendChild(chip);
+    });
+    const add = document.createElement('div');
+    add.className = 'chip add';
+    add.textContent = '＋ 条件エリアを追加';
+    add.addEventListener('click', ()=>{
+      const g = newGroup(nextGroupId++);
+      groups.push(g);
+      activeGroupId = g.id;
+      renderGroupChips();
+      renderCondCards();
+      renderGroupCount();
+    });
+    groupChips.appendChild(add);
+    renderGroupCount();
+  }
+  function renderGroupCount(){
+    const leftover = ungroupedIndices().length;
+    let text = groups.map(g=> `${g.name}：${g.cells.size}ピース`).join('　/　');
+    if(leftover>0) text += `　/　未設定：${leftover}ピース`;
+    groupCountEl.textContent = text;
+  }
+
+  function renderCondCards(){
+    condCards.innerHTML = '';
+    groups.forEach(g=>{
+      const card = document.createElement('div');
+      card.className = 'cond-card';
+      const isManual = g.labelAnchor !== null && g.cells.has(g.labelAnchor);
+      const isPicking = labelPickGroupId === g.id;
+      card.innerHTML = `
+        <div class="cond-top">
+          <span class="sw" style="background:${g.color}"></span>
+          <input type="text" class="cname" placeholder="条件名（未入力の場合は「${g.name}」と表示）" value="${g.condition.name}">
+        </div>
+        <div class="cond-switches">
+          <label><input type="checkbox" class="showNameChk" ${g.showName?'checked':''}>条件名をラベルに表示する</label>
+          <label><input type="checkbox" class="useNumChk" ${g.useNumbers?'checked':''}>数値管理を使用する（目標値・現在値・進捗バー）</label>
+        </div>
+        <div class="cond-nums" style="${g.useNumbers?'':'display:none;'}">
+          <div class="num-field">目標 <input type="number" class="goal" value="${g.condition.goal}"></div>
+          <div class="num-field">現在 <input type="number" class="current" value="${g.condition.current}"></div>
+        </div>
+        <div class="progress-track" style="${g.useNumbers?'':'display:none;'}"><div class="progress-fill" style="width:${progressPct(g)}%; background:${g.color};"></div></div>
+        <div class="state-toggle">
+          <button data-state="close" class="${g.condition.state==='close'?'active close':''}">CLOSE</button>
+          <button data-state="preview" class="${g.condition.state==='preview'?'active preview':''}">ぼかし</button>
+          <button data-state="open" class="${g.condition.state==='open'?'active open':''}">OPEN</button>
+        </div>
+        <div class="label-pos-row">
+          <span>ラベル位置：<span class="lp-status-text">${isPicking ? '選択中…' : (isManual ? '手動' : '自動')}</span></span>
+          <button class="btn btn-secondary btn-sm lp-pick-btn" type="button">${isPicking ? 'キャンセル' : 'ラベル表示セルを選択'}</button>
+          <button class="btn btn-secondary btn-sm lp-reset-btn" type="button" style="${isManual ? '' : 'display:none;'}">自動配置に戻す</button>
+        </div>
+        <div class="label-pos-row no-top">
+          <span>ラベルサイズ：</span>
+          <div class="label-size-toggle lsz-toggle">
+            <button data-size="small" class="${(g.labelSize||'small')==='small'?'active':''}" type="button">小</button>
+            <button data-size="medium" class="${g.labelSize==='medium'?'active':''}" type="button">中</button>
+            <button data-size="large" class="${g.labelSize==='large'?'active':''}" type="button">大</button>
+          </div>
+        </div>`;
+
+      card.querySelector('.cname').addEventListener('input', e=>{ g.condition.name = e.target.value; refreshCellVisuals(); });
+      card.querySelector('.showNameChk').addEventListener('change', e=>{ g.showName = e.target.checked; refreshCellVisuals(); });
+      card.querySelector('.useNumChk').addEventListener('change', e=>{
+        g.useNumbers = e.target.checked;
+        card.querySelector('.cond-nums').style.display = g.useNumbers ? 'flex' : 'none';
+        card.querySelector('.progress-track').style.display = g.useNumbers ? 'block' : 'none';
+        refreshCellVisuals();
+      });
+      const goalInput = card.querySelector('.goal');
+      const curInput = card.querySelector('.current');
+      const fill = card.querySelector('.progress-fill');
+      function updateProgress(){
+        g.condition.goal = parseFloat(goalInput.value) || 0;
+        g.condition.current = parseFloat(curInput.value) || 0;
+        fill.style.width = progressPct(g) + '%';
+        refreshCellVisuals();
+      }
+      goalInput.addEventListener('input', updateProgress);
+      curInput.addEventListener('input', updateProgress);
+      card.querySelectorAll('.state-toggle button').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          g.condition.state = btn.dataset.state;
+          card.querySelectorAll('.state-toggle button').forEach(b=>b.className = '');
+          btn.className = 'active ' + btn.dataset.state;
+          refreshCellVisuals();
+        });
+      });
+      card.querySelector('.lp-pick-btn').addEventListener('click', ()=>{
+        labelPickGroupId = (labelPickGroupId === g.id) ? null : g.id;
+        refreshCellVisuals();
+        renderCondCards();
+        updateStageHint();
+      });
+      card.querySelector('.lp-reset-btn').addEventListener('click', ()=>{
+        g.labelAnchor = null;
+        refreshCellVisuals();
+        renderCondCards();
+      });
+      card.querySelectorAll('.lsz-toggle button').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          g.labelSize = btn.dataset.size;
+          card.querySelectorAll('.lsz-toggle button').forEach(b=> b.classList.toggle('active', b===btn));
+          refreshCellVisuals();
+        });
+      });
+      condCards.appendChild(card);
+    });
+  }
+  function progressPct(g){
+    const goal = g.condition.goal || 1;
+    return Math.min(100, Math.max(0, (g.condition.current/goal)*100)).toFixed(0);
+  }
+
+  function showStep(n){
+    labelPickGroupId = null; // STEPを離れたら選択モードは解除
+    currentStep = n;
+    document.querySelectorAll('.step-panel').forEach(p=>{
+      p.classList.toggle('active', parseInt(p.dataset.step)===n);
+    });
+    document.querySelectorAll('.step-tab').forEach(t=>{
+      const s = parseInt(t.dataset.step);
+      t.classList.toggle('active', s===n);
+      t.classList.toggle('done', s<n);
+    });
+    prevBtn.disabled = (n===1);
+    if(n===4){
+      nextBtn.textContent = '🖼 プレビューをPNG保存';
+      nextBtn.dataset.mode = 'save';
+    } else {
+      nextBtn.textContent = '次へ →';
+      nextBtn.dataset.mode = 'next';
+    }
+    if(n===4) renderCondCards();
+    updatePreviewMode();
+    refreshCellVisuals();
+  }
+  stepTabs.querySelectorAll('.step-tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      if(currentStep===3 && parseInt(t.dataset.step)===4){ goToStep4(); return; }
+      showStep(parseInt(t.dataset.step));
+    });
+  });
+  prevBtn.addEventListener('click', ()=>{ if(currentStep>1) showStep(currentStep-1); });
+  nextBtn.addEventListener('click', ()=>{
+    if(nextBtn.dataset.mode === 'save'){
+      exportPreviewPNG();
+      return;
+    }
+    if(currentStep===3){ goToStep4(); return; }
+    if(currentStep<4) showStep(currentStep+1);
+  });
+
+  function goToStep4(){
+    const leftover = ungroupedIndices();
+    if(leftover.length === 0){ showStep(4); return; }
+    openModal(
+      '未設定のピースがあります',
+      `未設定のピースが${leftover.length}個あります。\n未設定ピースを新しい条件エリアとして登録しますか？`,
+      ()=>{
+        const g = newGroup(nextGroupId++);
+        leftover.forEach(idx=> g.cells.add(idx));
+        groups.push(g);
+        renderGroupChips();
+        renderCondCards();
+        showStep(4);
+      },
+      '条件エリア化して進む'
+    );
+  }
+
+  /* ---------- 新しいパネルを作成（全体リセット） ---------- */
+  const newPanelBtn = document.getElementById('newPanelBtn');
+  function resetAll(){
+    cols = 5; rows = 5;
+    colsInput.value = 5; rowsInput.value = 5;
+    hasImage = false;
+    artwork.src = '';
+    artwork.style.display = 'none';
+    stageEmpty.style.display = 'flex';
+    stage.style.aspectRatio = '4/3';
+    fileInput.value = '';
+    filePickedRow.style.display = 'none';
+    loadNotice.style.display = 'none';
+    groups = [ newGroup(1) ];
+    nextGroupId = 2;
+    activeGroupId = 1;
+    labelPickGroupId = null;
+    buildGrid();
+    renderGroupChips();
+    renderCondCards();
+    showStep(1);
+    toast('新しいパネルを作成しました');
+  }
+  newPanelBtn.addEventListener('click', ()=>{
+    openModal(
+      '新しいパネルを作成しますか？',
+      '現在の内容はリセットされます。\n保存したい場合は、先に「設定を保存（JSON）」をご利用ください。',
+      resetAll,
+      '新しく作成する'
+    );
+  });
+
+  clampGrid();
+  buildGrid();
+  renderGroupChips();
+  renderCondCards();
+  showStep(1);
+</script>
+
+</body>
+</html>
