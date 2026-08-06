@@ -637,6 +637,44 @@
 
   #fileInputJSON{display:none;}
 
+  /* ---------- startup (autosave restore) modal ---------- */
+  .startup-modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(124,34,25,0.45);
+    z-index:1100;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .startup-modal-overlay.show{
+    display:flex;
+  }
+  .startup-modal{
+    background:var(--cream, #fffdf7);
+    border-radius:var(--radius-lg, 22px);
+    padding:26px;
+    max-width:360px;
+    width:100%;
+    box-shadow:0 20px 50px rgba(0,0,0,0.25);
+    text-align:center;
+  }
+  .startup-modal h3{
+    margin:0 0 8px;
+    font-size:17px;
+    color:var(--red-ink, #7c2219);
+  }
+  .startup-modal-desc{
+    font-size:13.5px;
+    color:var(--ink-soft, #8a7565);
+    margin:0 0 20px;
+    line-height:1.6;
+  }
+  .startup-modal-buttons{
+    justify-content:center;
+  }
+
   /* ---------- crop modal ---------- */
   .crop-modal-overlay{
     display:none;
@@ -722,6 +760,16 @@
 </style>
 </head>
 <body>
+<div id="startupModalOverlay" class="startup-modal-overlay">
+  <div class="startup-modal">
+    <h3>前回のデータが見つかりました</h3>
+    <p class="startup-modal-desc">続きを開きますか？</p>
+    <div class="row-buttons startup-modal-buttons">
+      <button class="btn-outline" id="startupFreshBtn">新しく始める</button>
+      <button class="btn-primary" id="startupContinueBtn">続きから始める</button>
+    </div>
+  </div>
+</div>
 <div class="wrap">
 
   <div class="hero">
@@ -956,9 +1004,132 @@
   var loadJsonBtn = document.getElementById("loadJsonBtn");
   var fileInputJSON = document.getElementById("fileInputJSON");
   var renderCanvas = document.getElementById("renderCanvas");
+  var startupModalOverlay = document.getElementById("startupModalOverlay");
+  var startupContinueBtn = document.getElementById("startupContinueBtn");
+  var startupFreshBtn = document.getElementById("startupFreshBtn");
 
   var lastResult = null; // { winners: [names], timestamp: Date, mode: "return"|"noReturn" }
   var MAX_ITEMS = 30;
+
+  /* ============ autosave (localStorage) ============
+   * RuruPop Carnival 共通仕様: 変更のたびに自動保存し、
+   * 次回起動時に「続きから始める / 新しく始める」を選べるようにする。
+   * ツールごとに個別のキーを持ち、既存の「JSON保存・読込」機能とは独立している。
+   */
+  var AUTOSAVE_KEY = "rurupopCarnival:shakeAndTake:autosave:v1";
+
+  function buildAutosavePayload(){
+    var payload = {
+      items: state.items.map(function(it){
+        return { name: it.name, count: it.count, remaining: remaining[it.id] };
+      }),
+      drawCount: state.drawCount,
+      returnMode: state.returnMode,
+      campaignTitle: state.campaignTitle,
+      showDate: state.showDate,
+      history: history.map(function(h){
+        return { winners: h.winners, timestamp: h.timestamp.toISOString(), mode: h.mode };
+      }),
+      lastResult: lastResult ? {
+        winners: lastResult.winners,
+        timestamp: lastResult.timestamp.toISOString(),
+        mode: lastResult.mode
+      } : null
+    };
+    if(state.isCustomChar){
+      payload.charImageSrc = state.charImageSrc; // 480x480にリサイズ済みのものだけを保存
+    }
+    return payload;
+  }
+
+  function autoSaveNow(){
+    try{
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(buildAutosavePayload()));
+    }catch(e){
+      // ストレージが使用できない/満杯などの場合は、操作を妨げないよう静かに無視する
+    }
+  }
+
+  var autoSaveTimer = null;
+  function scheduleAutoSave(){
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(autoSaveNow, 400);
+  }
+
+  function clearAutoSave(){
+    try{ localStorage.removeItem(AUTOSAVE_KEY); }catch(e){}
+  }
+
+  function loadAutosaveRaw(){
+    try{
+      var raw = localStorage.getItem(AUTOSAVE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function restoreFromAutosave(data){
+    try{
+      if(Array.isArray(data.items) && data.items.length > 0){
+        var srcItems = data.items.slice(0, MAX_ITEMS);
+        state.items = srcItems.map(function(it){
+          return { id: uid(), name: it.name || "", count: Number(it.count) || 0 };
+        });
+        remaining = {};
+        state.items.forEach(function(it, idx){
+          var savedRem = srcItems[idx] ? Number(srcItems[idx].remaining) : NaN;
+          remaining[it.id] = (!isNaN(savedRem) && savedRem >= 0) ? savedRem : (Number(it.count) || 0);
+        });
+      }
+
+      state.drawCount = Number(data.drawCount) > 0 ? Number(data.drawCount) : 1;
+      state.returnMode = data.returnMode === "noReturn" ? "noReturn" : "return";
+      state.campaignTitle = typeof data.campaignTitle === "string" ? data.campaignTitle : "";
+      state.showDate = data.showDate !== false;
+
+      if(data.charImageSrc){
+        state.charImageSrc = data.charImageSrc;
+        state.isCustomChar = true;
+      }
+
+      history = Array.isArray(data.history) ? data.history.map(function(h){
+        return {
+          winners: h.winners || [],
+          timestamp: new Date(h.timestamp),
+          mode: h.mode === "noReturn" ? "noReturn" : "return"
+        };
+      }) : [];
+
+      lastResult = data.lastResult ? {
+        winners: data.lastResult.winners || [],
+        timestamp: new Date(data.lastResult.timestamp),
+        mode: data.lastResult.mode === "noReturn" ? "noReturn" : "return"
+      } : null;
+
+      // ---- DOMへの反映 ----
+      drawCountEl.value = state.drawCount;
+      document.querySelectorAll('input[name="returnMode"]').forEach(function(r){
+        r.checked = (r.value === state.returnMode);
+      });
+      campaignTitleEl.value = state.campaignTitle;
+      showDateCheck.checked = state.showDate;
+      charPreviewImg.src = state.charImageSrc;
+
+      renderItemList();
+      renderHistory();
+      if(lastResult){
+        renderResult(lastResult);
+        resultActions.style.display = "flex";
+      } else {
+        resultArea.innerHTML = '<div class="result-empty">SHAKE! を押すと、ここに結果が表示されます</div>';
+        resultActions.style.display = "none";
+      }
+      hideError();
+    }catch(e){
+      console.error("自動保存データの復元に失敗しました", e);
+    }
+  }
 
   /* ============ rendering: prize list ============ */
   var rowRefs = []; // [{item, rowEl, probEl, remEl}]
@@ -984,6 +1155,7 @@
       nameInput.placeholder = "景品名";
       nameInput.addEventListener("input", function(){
         item.name = nameInput.value;
+        scheduleAutoSave();
       });
       nameWrap.appendChild(nameInput);
       row.appendChild(nameWrap);
@@ -995,6 +1167,7 @@
         state.items = state.items.filter(function(it){ return it.id !== item.id; });
         delete remaining[item.id];
         renderItemList();
+        autoSaveNow();
       });
       row.appendChild(removeBtn);
 
@@ -1018,6 +1191,7 @@
         item.count = v;
         remaining[item.id] = v; // 個数を変更すると、その景品の残り玉数も更新されます
         refreshProbabilities();
+        scheduleAutoSave();
       });
       countField.appendChild(countLabel);
       countField.appendChild(countInput);
@@ -1094,6 +1268,7 @@
     state.items.push(newItem);
     remaining[newItem.id] = newItem.count;
     renderItemList();
+    autoSaveNow();
   });
 
   bulkGenBtn.addEventListener("click", function(){
@@ -1116,12 +1291,14 @@
       if(!(it.id in remaining)) remaining[it.id] = Number(it.count) || 0;
     });
     renderItemList();
+    autoSaveNow();
   });
 
   /* ============ draw settings ============ */
   drawCountEl.addEventListener("input", function(){
     var v = parseInt(drawCountEl.value, 10);
     state.drawCount = isNaN(v) || v < 1 ? 1 : v;
+    scheduleAutoSave();
   });
 
   var returnRadios = document.querySelectorAll('input[name="returnMode"]');
@@ -1130,6 +1307,7 @@
       if(r.checked){
         state.returnMode = r.value;
         refreshProbabilities();
+        autoSaveNow();
       }
     });
   });
@@ -1139,6 +1317,7 @@
     if(!ok) return;
     resetRemainingAll();
     refreshProbabilities();
+    autoSaveNow();
   });
 
   /* ============ 抽選エンジン（ガラポン方式） ============ */
@@ -1229,6 +1408,7 @@
     renderHistory();
     refreshProbabilities();
     resultActions.style.display = "flex";
+    autoSaveNow();
   }
 
   /*
@@ -1311,6 +1491,7 @@
   clearHistoryBtn.addEventListener("click", function(){
     history = [];
     renderHistory();
+    autoSaveNow();
   });
 
   shakeBtn.addEventListener("click", function(){
@@ -1367,6 +1548,7 @@
     state.charImageSrc = DEFAULT_CHAR_SRC;
     state.isCustomChar = false;
     charPreviewImg.src = DEFAULT_CHAR_SRC;
+    autoSaveNow();
   });
 
   /* ---- crop modal ---- */
@@ -1515,14 +1697,17 @@
     state.isCustomChar = true;
     charPreviewImg.src = state.charImageSrc;
     closeCropModal();
+    autoSaveNow();
   });
 
   showDateCheck.addEventListener("change", function(){
     state.showDate = showDateCheck.checked;
+    autoSaveNow();
   });
 
   campaignTitleEl.addEventListener("input", function(){
     state.campaignTitle = campaignTitleEl.value;
+    scheduleAutoSave();
   });
 
   /* ============ PNG export ============ */
@@ -1979,6 +2164,7 @@
 
         renderItemList();
         hideError();
+        autoSaveNow();
         alert("設定を読み込みました。");
       }catch(err){
         alert("JSONファイルの読み込みに失敗しました。ファイル形式をご確認ください。");
@@ -2017,11 +2203,31 @@
 
     renderItemList();
     hideError();
+    autoSaveNow();
   });
 
-  /* ============ init ============ */
+  /* ============ init / autosave restore prompt ============ */
   renderItemList();
   renderHistory();
+
+  (function initAutosavePrompt(){
+    var saved = loadAutosaveRaw();
+    if(!saved){
+      return; // 保存データなし。通常の初期状態のまま。
+    }
+    startupModalOverlay.classList.add("show");
+
+    startupContinueBtn.addEventListener("click", function(){
+      restoreFromAutosave(saved);
+      startupModalOverlay.classList.remove("show");
+    });
+
+    startupFreshBtn.addEventListener("click", function(){
+      clearAutoSave();
+      startupModalOverlay.classList.remove("show");
+      // state はすでに初期状態のままなので追加の処理は不要
+    });
+  })();
 })();
 </script>
 </body>
