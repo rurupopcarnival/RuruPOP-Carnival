@@ -100,8 +100,55 @@
     gap:18px;
     align-items:start;
   }
+
+  /* .panel-sub: on desktop this renders as plain, borderless content
+     flowing seamlessly inside its parent .panel (visually identical to
+     before). On mobile it becomes its own card so it can be reordered
+     independently via CSS order (see mobile layout block below). */
+  .panel-sub{
+    background:none;
+    border:none;
+    border-radius:0;
+    padding:0;
+    box-shadow:none;
+    margin-bottom:0;
+  }
+
   @media (max-width: 860px){
     .layout{grid-template-columns:1fr;}
+
+    /* Reflow: "open → draw → see result" first, settings/management last.
+       DOM order is left untouched; only the visual order changes here. */
+    .layout{
+      display:grid;
+      grid-template-columns:1fr;
+    }
+    .left-col, .right-col, #panelDraw{
+      display:contents;
+    }
+
+    #drawControlsBlock{
+      order:1;
+      background:var(--cream);
+      border:1px solid var(--line);
+      border-radius:var(--radius-lg);
+      padding:20px;
+      box-shadow:var(--shadow-soft);
+      margin-bottom:18px;
+    }
+    #drawResultBlock{
+      order:2;
+      background:var(--cream);
+      border:1px solid var(--line);
+      border-radius:var(--radius-lg);
+      padding:20px;
+      box-shadow:var(--shadow-soft);
+      margin-bottom:18px;
+    }
+    #panelImage{ order:3; }
+    #panelHistory{ order:4; }
+    #panelItems{ order:5; }
+    #panelJson{ order:6; }
   }
 
   .panel{
@@ -624,7 +671,7 @@
   <div class="layout">
     <!-- LEFT: items -->
     <div class="left-col">
-      <div class="panel">
+      <div class="panel" id="panelItems">
         <h2><span class="dot"></span>項目リスト</h2>
         <p class="desc">項目名と「盤の面積」を設定してください。面積が大きいほど当たりやすくなります。面積 0 は抽選対象外です。</p>
 
@@ -641,7 +688,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="panelHistory">
         <h2><span class="dot"></span>履歴</h2>
         <p class="desc">これまでの抽選結果が新しい順に並びます。</p>
         <div id="historyList"><div class="history-empty">まだ履歴はありません</div></div>
@@ -653,37 +700,41 @@
 
     <!-- RIGHT: settings + result -->
     <div class="right-col">
-      <div class="panel">
-        <h2><span class="dot"></span>抽選設定</h2>
+      <div class="panel" id="panelDraw">
+        <div class="panel-sub" id="drawControlsBlock">
+          <h2><span class="dot"></span>抽選設定</h2>
 
-        <div class="setting-line">
-          <div class="label">当選本数<small>ルーレットを何本当選させるか</small></div>
-          <input type="number" id="winCount" class="win-count-input" min="1" value="1">
-        </div>
+          <div class="setting-line">
+            <div class="label">当選本数<small>ルーレットを何本当選させるか</small></div>
+            <input type="number" id="winCount" class="win-count-input" min="1" value="1">
+          </div>
 
-        <div class="setting-line">
-          <div class="label">重複当選<small>同じ項目の複数回当選を許すか</small></div>
-          <div class="toggle-group">
-            <label><input type="radio" name="dupMode" value="allow" checked><span>あり</span></label>
-            <label><input type="radio" name="dupMode" value="deny"><span>なし</span></label>
+          <div class="setting-line">
+            <div class="label">重複当選<small>同じ項目の複数回当選を許すか</small></div>
+            <div class="toggle-group">
+              <label><input type="radio" name="dupMode" value="allow" checked><span>あり</span></label>
+              <label><input type="radio" name="dupMode" value="deny"><span>なし</span></label>
+            </div>
+          </div>
+
+          <div class="round-btn-wrap">
+            <button id="roundBtn">ROUND !</button>
+            <div class="error-box" id="errorBox"></div>
           </div>
         </div>
 
-        <div class="round-btn-wrap">
-          <button id="roundBtn">ROUND !</button>
-          <div class="error-box" id="errorBox"></div>
-        </div>
+        <div class="panel-sub" id="drawResultBlock">
+          <div id="resultArea">
+            <div class="result-empty">ROUND! を押すと、ここに結果が表示されます</div>
+          </div>
 
-        <div id="resultArea">
-          <div class="result-empty">ROUND! を押すと、ここに結果が表示されます</div>
-        </div>
-
-        <div class="row-buttons" id="resultActions" style="display:none; margin-top:12px;">
-          <button class="btn-outline" id="savePngBtn">結果をPNG保存</button>
+          <div class="row-buttons" id="resultActions" style="display:none; margin-top:12px;">
+            <button class="btn-outline" id="savePngBtn">結果をPNG保存</button>
+          </div>
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="panelImage">
         <h2><span class="dot"></span>結果画像の設定</h2>
 
         <div class="field-block">
@@ -727,7 +778,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="panelJson">
         <h2><span class="dot"></span>設定の保存・読込</h2>
         <p class="desc">項目・当選本数・重複設定などをJSONファイルに保存／読込できます。</p>
         <div class="row-buttons">
