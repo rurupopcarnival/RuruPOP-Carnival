@@ -178,6 +178,44 @@
   .stat-label{font-size:10.5px; color:var(--ink-soft); font-weight:700; margin-bottom:2px;}
   .stat-value{font-size:16px; font-weight:800; color:var(--red-ink);}
 
+  /* ---------- startup (autosave restore) modal ---------- */
+  .startup-modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(124,34,25,0.45);
+    z-index:1100;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .startup-modal-overlay.show{
+    display:flex;
+  }
+  .startup-modal{
+    background:var(--cream, #fffdf7);
+    border-radius:var(--radius-lg, 22px);
+    padding:26px;
+    max-width:360px;
+    width:100%;
+    box-shadow:0 20px 50px rgba(0,0,0,0.25);
+    text-align:center;
+  }
+  .startup-modal h3{
+    margin:0 0 8px;
+    font-size:17px;
+    color:var(--red-ink, #7c2219);
+  }
+  .startup-modal-desc{
+    font-size:13.5px;
+    color:var(--ink-soft, #8a7565);
+    margin:0 0 20px;
+    line-height:1.6;
+  }
+  .startup-modal-buttons{
+    justify-content:center;
+  }
+
   /* ---------- crop modal (reused pattern) ---------- */
   .crop-modal-overlay{
     display:none; position:fixed; inset:0; background:rgba(124,34,25,0.45); z-index:1000;
@@ -288,6 +326,16 @@
 </style>
 </head>
 <body>
+<div id="startupModalOverlay" class="startup-modal-overlay">
+  <div class="startup-modal">
+    <h3>前回のデータが見つかりました</h3>
+    <p class="startup-modal-desc">続きを開きますか？</p>
+    <div class="row-buttons startup-modal-buttons">
+      <button class="btn-outline" id="startupFreshBtn">新しく始める</button>
+      <button class="btn-primary" id="startupContinueBtn">続きから始める</button>
+    </div>
+  </div>
+</div>
 <div class="wrap">
 
   <div class="hero">
@@ -305,6 +353,8 @@
       <textarea id="drawnNumbersInput" placeholder="例：1,5,18,32,41"></textarea>
       <div class="row-buttons" style="margin-top:10px;">
         <button class="btn-soft" id="quickDrawBtn">🎲 次の番号を引く</button>
+        <button class="btn-outline" id="copyDrawnBtn">📋 抽選済み番号をコピー</button>
+        <button class="btn-outline" id="saveDrawnBtn">💾 抽選済み番号を保存</button>
         <button class="btn-outline" id="clearDrawnBtn">抽選済みをクリア</button>
       </div>
       <div class="stat-row">
@@ -462,6 +512,112 @@
   var cardIdCounter = 0;
   var rangeInvalid = false;
 
+  /* ============ autosave (localStorage) ============
+   * RuruPop Carnival 共通仕様: 変更のたびに自動保存し、
+   * 次回起動時に「続きから始める / 新しく始める」を選べるようにする。
+   * 既存の「JSON保存・読込」機能とは独立している（本ツールにはJSON機能はないが、
+   * 将来追加された場合でも自動保存とは別実装のままにする）。
+   */
+  var AUTOSAVE_KEY = "rurupopCarnival:bingoCard:autosave:v1";
+
+  function buildAutosavePayload(){
+    return {
+      campaignTitle: state.campaignTitle,
+      size: state.size,
+      free: state.free,
+      rangeStart: state.rangeStart,
+      rangeEnd: state.rangeEnd,
+      bgColorKey: state.bgColorKey,
+      commonImgSrc: state.commonImgSrc,
+      drawnRaw: state.drawnRaw,
+      serialCounter: serialCounter,
+      cardIdCounter: cardIdCounter,
+      cards: cards.map(function(c){
+        return {
+          id: c.id,
+          serial: c.serial,
+          name: c.name,
+          size: c.size,
+          free: c.free,
+          start: c.start,
+          end: c.end,
+          numbers: c.numbers
+        };
+      })
+    };
+  }
+
+  function autoSaveNow(){
+    try{
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(buildAutosavePayload()));
+    }catch(e){
+      // ストレージが使用できない/満杯などの場合は、操作を妨げないよう静かに無視する
+    }
+  }
+
+  var autoSaveTimer = null;
+  function scheduleAutoSave(){
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(autoSaveNow, 400);
+  }
+
+  function clearAutoSave(){
+    try{ localStorage.removeItem(AUTOSAVE_KEY); }catch(e){}
+  }
+
+  function loadAutosaveRaw(){
+    try{
+      var raw = localStorage.getItem(AUTOSAVE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function restoreFromAutosave(data){
+    try{
+      state.campaignTitle = data.campaignTitle || "";
+      state.size = data.size || 5;
+      state.free = (data.free !== undefined) ? data.free : true;
+      state.rangeStart = (data.rangeStart !== undefined) ? data.rangeStart : 1;
+      state.rangeEnd = (data.rangeEnd !== undefined) ? data.rangeEnd : 75;
+      state.bgColorKey = data.bgColorKey || "pink";
+      state.commonImgSrc = data.commonImgSrc || "";
+      state.drawnRaw = data.drawnRaw || "";
+      state.drawnSet = parseDrawnNumbers(state.drawnRaw);
+
+      serialCounter = data.serialCounter || 0;
+      cardIdCounter = data.cardIdCounter || 0;
+      cards = (data.cards || []).map(function(c){
+        return {
+          id: c.id,
+          serial: c.serial,
+          name: c.name || "",
+          size: c.size,
+          free: c.free,
+          start: c.start,
+          end: c.end,
+          numbers: c.numbers
+        };
+      });
+
+      // DOMへの反映
+      campaignTitleEl.value = state.campaignTitle;
+      cardSizeEl.value = String(state.size);
+      freeCheckEl.checked = state.free;
+      rangeStartEl.value = state.rangeStart;
+      rangeEndEl.value = state.rangeEnd;
+      drawnNumbersInputEl.value = state.drawnRaw;
+
+      renderSwatches();
+      renderCommonImgPreview();
+      validateRange();
+      updateAll();
+    }catch(e){
+      console.error("自動保存データの復元に失敗しました", e);
+    }
+  }
+
   /* ============ DOM refs ============ */
   var campaignTitleEl = document.getElementById("campaignTitle");
   var cardSizeEl = document.getElementById("cardSize");
@@ -474,6 +630,8 @@
 
   var drawnNumbersInputEl = document.getElementById("drawnNumbersInput");
   var quickDrawBtn = document.getElementById("quickDrawBtn");
+  var copyDrawnBtn = document.getElementById("copyDrawnBtn");
+  var saveDrawnBtn = document.getElementById("saveDrawnBtn");
   var clearDrawnBtn = document.getElementById("clearDrawnBtn");
   var statDrawnEl = document.getElementById("statDrawn");
   var statRemainEl = document.getElementById("statRemain");
@@ -490,6 +648,10 @@
   var adminAreaEl = document.getElementById("adminArea");
 
   var renderCanvas = document.getElementById("renderCanvas");
+
+  var startupModalOverlay = document.getElementById("startupModalOverlay");
+  var startupContinueBtn = document.getElementById("startupContinueBtn");
+  var startupFreshBtn = document.getElementById("startupFreshBtn");
 
   /* ============ utils ============ */
   function pad3(n){ n = String(n); while(n.length < 3) n = "0" + n; return n; }
@@ -666,6 +828,7 @@
         state.bgColorKey = c.key;
         renderSwatches();
         renderCards();
+        autoSaveNow();
       });
       bgSwatchesEl.appendChild(el);
     });
@@ -763,6 +926,7 @@
       nameInput.maxLength = 30;
       nameInput.addEventListener("input", function(){
         card.name = nameInput.value;
+        scheduleAutoSave();
       });
       nameField.appendChild(nameInput);
       head.appendChild(nameField);
@@ -805,6 +969,7 @@
       regenBtn.addEventListener("click", function(){
         regenerateCard(card);
         renderCards();
+        autoSaveNow();
       });
       actions.appendChild(regenBtn);
 
@@ -822,6 +987,7 @@
         if(!ok) return;
         cards = cards.filter(function(c){ return c.id !== card.id; });
         renderCards();
+        autoSaveNow();
       });
       actions.appendChild(delBtn);
 
@@ -943,6 +1109,7 @@
   /* ============ settings: title ============ */
   campaignTitleEl.addEventListener("input", function(){
     state.campaignTitle = campaignTitleEl.value;
+    scheduleAutoSave();
   });
 
   /* ============ settings: size ============ */
@@ -960,6 +1127,7 @@
       if(cards.length > 0) flashRegenNote();
     }
     updateAll();
+    autoSaveNow();
   });
 
   /* ============ settings: FREE toggle ============ */
@@ -971,6 +1139,7 @@
       if(cards.length > 0) flashRegenNote();
     }
     updateAll();
+    autoSaveNow();
   });
 
   /* ============ settings: range ============ */
@@ -985,6 +1154,7 @@
       if(cards.length > 0) flashRegenNote();
     }
     updateAll();
+    scheduleAutoSave();
   }
   rangeStartEl.addEventListener("input", onRangeChange);
   rangeEndEl.addEventListener("input", onRangeChange);
@@ -994,6 +1164,7 @@
     state.drawnRaw = drawnNumbersInputEl.value;
     state.drawnSet = parseDrawnNumbers(state.drawnRaw);
     updateAll();
+    scheduleAutoSave();
   });
 
   clearDrawnBtn.addEventListener("click", function(){
@@ -1003,6 +1174,7 @@
     state.drawnSet = new Set();
     drawnNumbersInputEl.value = "";
     updateAll();
+    autoSaveNow();
   });
 
   quickDrawBtn.addEventListener("click", function(){
@@ -1024,6 +1196,73 @@
     state.drawnRaw = arr.join(",");
     drawnNumbersInputEl.value = state.drawnRaw;
     updateAll();
+    autoSaveNow();
+  });
+
+  /* ============ copy / save drawn numbers as plain text ============ */
+  function sortedDrawnText(){
+    return Array.from(state.drawnSet).sort(function(a,b){ return a-b; }).join(",");
+  }
+
+  function flashButtonLabel(btn, tempText){
+    var original = btn.dataset.originalLabel || btn.textContent;
+    btn.dataset.originalLabel = original;
+    btn.textContent = tempText;
+    clearTimeout(btn._flashTimer);
+    btn._flashTimer = setTimeout(function(){ btn.textContent = original; }, 1500);
+  }
+
+  function fallbackCopyText(text){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try{ document.execCommand("copy"); }catch(e){}
+    document.body.removeChild(ta);
+  }
+
+  copyDrawnBtn.addEventListener("click", function(){
+    var text = sortedDrawnText();
+    if(!text){
+      alert("抽選済みナンバーがありません。");
+      return;
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){
+        flashButtonLabel(copyDrawnBtn, "✅ コピーしました");
+      }).catch(function(){
+        fallbackCopyText(text);
+        flashButtonLabel(copyDrawnBtn, "✅ コピーしました");
+      });
+    } else {
+      fallbackCopyText(text);
+      flashButtonLabel(copyDrawnBtn, "✅ コピーしました");
+    }
+  });
+
+  saveDrawnBtn.addEventListener("click", function(){
+    var text = sortedDrawnText();
+    if(!text){
+      alert("抽選済みナンバーがありません。");
+      return;
+    }
+    var blob = new Blob([text], {type:"text/plain"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var stamp = new Date();
+    var pad = function(n){ return n<10 ? "0"+n : ""+n; };
+    var fname = "drawn_numbers_" +
+      stamp.getFullYear() + pad(stamp.getMonth()+1) + pad(stamp.getDate()) + "_" +
+      pad(stamp.getHours()) + pad(stamp.getMinutes()) + pad(stamp.getSeconds()) + ".txt";
+    a.href = url; a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    flashButtonLabel(saveDrawnBtn, "✅ 保存しました");
   });
 
   /* ============ add card ============ */
@@ -1048,6 +1287,7 @@
     regenerateCard(card);
     cards.push(card);
     renderCards();
+    autoSaveNow();
   });
 
   /* ============ common image (upload + circular crop, pattern reused from Shake & Take) ============ */
@@ -1073,6 +1313,7 @@
     state.commonImgSrc = "";
     renderCommonImgPreview();
     renderCards();
+    autoSaveNow();
   });
 
   commonFileInput.addEventListener("change", function(){
@@ -1221,6 +1462,7 @@
     renderCommonImgPreview();
     renderCards();
     closeCropModal();
+    autoSaveNow();
   });
 
   /* ============ PNG export helpers ============ */
@@ -1516,6 +1758,7 @@
 
     validateRange();
     updateAll();
+    autoSaveNow();
   });
 
   /* ============ init ============ */
@@ -1523,6 +1766,25 @@
   renderCommonImgPreview();
   validateRange();
   updateAll();
+
+  (function initAutosavePrompt(){
+    var saved = loadAutosaveRaw();
+    if(!saved){
+      return; // 保存データなし。通常の初期状態のまま。
+    }
+    startupModalOverlay.classList.add("show");
+
+    startupContinueBtn.addEventListener("click", function(){
+      restoreFromAutosave(saved);
+      startupModalOverlay.classList.remove("show");
+    });
+
+    startupFreshBtn.addEventListener("click", function(){
+      clearAutoSave();
+      startupModalOverlay.classList.remove("show");
+      // state はすでに初期状態のままなので追加の処理は不要
+    });
+  })();
 })();
 </script>
 </body>
