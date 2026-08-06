@@ -42,9 +42,47 @@
     .card-actions button{flex:1;min-height:40px;border:0;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 2px var(--line);color:var(--sub);font-weight:800}
     .note{margin:18px 0 0;text-align:center;color:var(--sub);font-size:12px}
     @media(max-width:760px){.wrap{padding:10px 9px 28px}.top{padding:16px 13px;border-radius:22px}.time{width:100%}.actions button{flex:1 1 45%}.grid{grid-template-columns:1fr}.card{padding:14px}.opt{grid-template-columns:minmax(0,1fr) 68px 80px}}
+
+    /* ---------- startup (autosave restore) modal ---------- */
+    .startup-modal-overlay{
+      display:none;
+      position:fixed;
+      inset:0;
+      background:rgba(48,53,64,.45);
+      z-index:1100;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+    .startup-modal-overlay.show{display:flex}
+    .startup-modal{
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:26px 22px;
+      max-width:360px;
+      width:100%;
+      box-shadow:var(--shadow);
+      text-align:center;
+    }
+    .startup-modal h3{margin:0 0 8px;font-size:17px;color:var(--text)}
+    .startup-modal-desc{font-size:13.5px;color:var(--sub);margin:0 0 20px;line-height:1.6}
+    .startup-modal-buttons{display:flex;gap:8px;justify-content:center}
+    .startup-modal-buttons button{flex:1;border:0;border-radius:13px;min-height:44px;padding:0 14px;font-weight:800}
+    #startupFreshBtn{background:#fff;box-shadow:inset 0 0 0 2px var(--line);color:var(--sub)}
+    #startupContinueBtn{background:var(--pink);color:#be4288}
   </style>
 </head>
 <body>
+<div id="startupModalOverlay" class="startup-modal-overlay">
+  <div class="startup-modal">
+    <h3>前回のデータが見つかりました</h3>
+    <p class="startup-modal-desc">続きを開きますか？</p>
+    <div class="startup-modal-buttons">
+      <button id="startupFreshBtn">新しく始める</button>
+      <button id="startupContinueBtn">続きから始める</button>
+    </div>
+  </div>
+</div>
 <main class="wrap">
   <section class="top">
     <div class="title-row">
@@ -75,6 +113,9 @@
   const grid = document.getElementById("grid");
   const timeEl = document.getElementById("time");
   const statusEl = document.getElementById("status");
+  const startupModalOverlay = document.getElementById("startupModalOverlay");
+  const startupContinueBtn = document.getElementById("startupContinueBtn");
+  const startupFreshBtn = document.getElementById("startupFreshBtn");
   const state = [];
 
   function toHalfWidth(value){
@@ -121,9 +162,82 @@
       : '<span class="empty">履歴はありません</span>';
   }
 
-  function createCounter(){
+  /* ============ autosave (localStorage) ============
+   * RuruPop Carnival 共通仕様: 変更のたびに自動保存し、
+   * 次回起動時に「続きから始める / 新しく始める」を選べるようにする。
+   * ツールごとに個別のキーを持ち、既存の「履歴をコピー／保存」機能とは独立している。
+   */
+  const AUTOSAVE_KEY = "rurupopCarnival:tallyCounter:autosave:v1";
+
+  function buildAutosavePayload(){
+    return {
+      counters: state.map(counter=>({
+        name: counter.name,
+        value: counter.value,
+        history: counter.history.map(h=>({time:h.time,result:h.result})),
+        options: counter.options.map(o=>({amount:o.amount,sign:o.sign}))
+      }))
+    };
+  }
+
+  function autoSaveNow(){
+    try{
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(buildAutosavePayload()));
+    }catch(e){
+      // ストレージが使用できない/満杯などの場合は、操作を妨げないよう静かに無視する
+    }
+  }
+
+  let autoSaveTimer = null;
+  function scheduleAutoSave(){
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(autoSaveNow, 400);
+  }
+
+  function clearAutoSave(){
+    try{ localStorage.removeItem(AUTOSAVE_KEY); }catch(e){}
+  }
+
+  function loadAutosaveRaw(){
+    try{
+      const raw = localStorage.getItem(AUTOSAVE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function restoreFromAutosave(data){
+    try{
+      const saved = Array.isArray(data && data.counters) ? data.counters : [];
+      if(!saved.length) return;
+
+      state.length = 0;
+      grid.innerHTML = "";
+
+      const count = Math.min(Math.max(saved.length, MIN_COUNTERS), MAX_COUNTERS);
+      for(let i=0;i<count;i++){
+        createCounter(saved[i] || null);
+      }
+      rebuildIndexes();
+    }catch(e){
+      console.error("自動保存データの復元に失敗しました", e);
+    }
+  }
+
+  function createCounter(initial){
     const index=state.length;
-    const counter={name:"",value:0,history:[],options:Array.from({length:OPTION_COUNT},()=>({amount:100,sign:"+"}))};
+    const options = (initial && Array.isArray(initial.options) && initial.options.length===OPTION_COUNT)
+      ? initial.options.map(o=>({amount:normalizeInteger(o && o.amount,100,false),sign:(o && o.sign==="-")?"-":"+"}))
+      : Array.from({length:OPTION_COUNT},()=>({amount:100,sign:"+"}));
+    const counter={
+      name: (initial && typeof initial.name==="string") ? initial.name : "",
+      value: (initial && Number.isFinite(initial.value)) ? initial.value : 0,
+      history: (initial && Array.isArray(initial.history))
+        ? initial.history.map(h=>({time:String((h && h.time)||""),result:Number(h && h.result)||0}))
+        : [],
+      options
+    };
     state.push(counter);
 
     const card=document.createElement("article");
@@ -154,7 +268,10 @@
     const historyEl=card.querySelector(".history");
     const optionsWrap=card.querySelector(".options");
 
-    nameInput.addEventListener("input",()=>counter.name=nameInput.value);
+    nameInput.value=counter.name;
+    valueInput.value=counter.value;
+
+    nameInput.addEventListener("input",()=>{counter.name=nameInput.value;scheduleAutoSave();});
 
     function commitValue(){
       const v=normalizeInteger(valueInput.value,counter.value,true);
@@ -163,6 +280,7 @@
         counter.value=v;
         addResultHistory(index);
         renderHistory(index,historyEl);
+        autoSaveNow();
       }
     }
 
@@ -175,6 +293,7 @@
       addResultHistory(index);
       valueInput.value=counter.value;
       renderHistory(index,historyEl);
+      autoSaveNow();
     }
 
     card.querySelector(".minus").onclick=()=>change(-1);
@@ -191,10 +310,22 @@
 
       const amount=row.querySelector(".optnum");
       const sign=row.querySelector("select");
-      amount.addEventListener("input",()=>amount.value=toHalfWidth(amount.value).replace(/[^\d]/g,""));
+      amount.value=String(counter.options[j].amount);
+      sign.value=counter.options[j].sign;
+
+      amount.addEventListener("input",()=>{
+        amount.value=toHalfWidth(amount.value).replace(/[^\d]/g,"");
+        counter.options[j].amount=normalizeInteger(amount.value,100,false);
+        scheduleAutoSave();
+      });
+      sign.addEventListener("change",()=>{
+        counter.options[j].sign=sign.value;
+        autoSaveNow();
+      });
       row.querySelector(".click").onclick=()=>{
         const n=normalizeInteger(amount.value,0,false);
         amount.value=n;
+        counter.options[j].amount=n;
         change(sign.value==="-"?-n:n);
       };
     }
@@ -205,6 +336,7 @@
         addResultHistory(index);
         valueInput.value=0;
         renderHistory(index,historyEl);
+        autoSaveNow();
       }
     };
 
@@ -212,6 +344,7 @@
       if(confirm(`${displayName(index)}の履歴をクリアしますか？`)){
         counter.history=[];
         renderHistory(index,historyEl);
+        autoSaveNow();
       }
     };
 
@@ -243,6 +376,7 @@
     if(state.length>=MAX_COUNTERS){showStatus("カウンターは最大30台です。");return}
     createCounter();
     showStatus(`${state.length}台になりました。`);
+    autoSaveNow();
   };
 
   document.getElementById("remove-counter").onclick=()=>{
@@ -253,6 +387,7 @@
     grid.lastElementChild.remove();
     rebuildIndexes();
     showStatus(`${state.length}台になりました。`);
+    autoSaveNow();
   };
 
   document.getElementById("copy-all").onclick=async()=>{
@@ -282,11 +417,32 @@
       renderHistory(index,card.querySelector(".history"));
     });
     showStatus("すべての値と履歴をクリアしました。");
+    autoSaveNow();
   };
 
   for(let i=0;i<MIN_COUNTERS;i++)createCounter();
   timeEl.textContent=dateParts().full;
   setInterval(()=>timeEl.textContent=dateParts().full,1000);
+
+  /* ============ init / autosave restore prompt ============ */
+  (function initAutosavePrompt(){
+    const saved = loadAutosaveRaw();
+    if(!saved || !Array.isArray(saved.counters) || !saved.counters.length){
+      return; // 保存データなし。通常の初期状態のまま。
+    }
+    startupModalOverlay.classList.add("show");
+
+    startupContinueBtn.addEventListener("click", function(){
+      restoreFromAutosave(saved);
+      startupModalOverlay.classList.remove("show");
+    });
+
+    startupFreshBtn.addEventListener("click", function(){
+      clearAutoSave();
+      startupModalOverlay.classList.remove("show");
+      // state はすでに初期状態のままなので追加の処理は不要
+    });
+  })();
 })();
 </script>
 </body>
