@@ -110,6 +110,7 @@
     .panel-history{ order:5; }
     .panel-items{ order:6; }
     .panel-conditions{ order:7; }
+    .panel-jsonsettings{ order:8; }
   }
 
   .panel{
@@ -342,6 +343,7 @@
   .crop-modal-buttons{ justify-content:center; }
 
   #fileInputTXT{ display:none; }
+  #fileInputJSON{ display:none; }
   #fileInputImage{ display:none; }
   #fileInputChar{ display:none; }
 
@@ -372,7 +374,7 @@
     <div class="left-col">
       <div class="panel panel-fortune">
         <h2><span class="dot"></span>Fortune Mode</h2>
-        <p class="desc">選ぶモードによってF内部の抽選方法が異なります。理論上の排出率は同一ですが、どのモードを選ぶかはあなた次第です✨</p>
+        <p class="desc">選ぶモードによって内部の抽選処理の個性が変わりますが、排出率には一切影響しません。配信で「今日はAuroraで！」なども楽しめます。</p>
         <div class="fortune-group" id="fortuneGroup">
           <div class="fortune-btn" data-mode="aurora"><span class="emoji">🌈</span>Aurora</div>
           <div class="fortune-btn" data-mode="blossom"><span class="emoji">🌸</span>Blossom</div>
@@ -482,6 +484,16 @@
           <button class="btn-danger" id="resetSettingsBtn" style="padding:9px 16px; font-size:12px;">設定をリセット</button>
         </div>
       </div>
+
+      <div class="panel panel-jsonsettings">
+        <h2><span class="dot"></span>設定の保存・読込</h2>
+        <p class="desc">景品・抽選回数・Fortune Mode・結果画像の設定・オリジナルアイコンなど、アプリの設定をまるごとJSONファイルに保存／読込できます。</p>
+        <div class="row-buttons">
+          <button class="btn-soft" id="saveJsonBtn">JSON保存</button>
+          <button class="btn-outline" id="loadJsonBtn">JSON読込</button>
+        </div>
+        <input type="file" id="fileInputJSON" accept=".json,application/json">
+      </div>
     </div>
   </div>
 
@@ -563,6 +575,9 @@
   var saveTxtBtn = document.getElementById("saveTxtBtn");
   var loadTxtBtn = document.getElementById("loadTxtBtn");
   var fileInputTXT = document.getElementById("fileInputTXT");
+  var saveJsonBtn = document.getElementById("saveJsonBtn");
+  var loadJsonBtn = document.getElementById("loadJsonBtn");
+  var fileInputJSON = document.getElementById("fileInputJSON");
   var fileInputImage = document.getElementById("fileInputImage");
   var fileInputChar = document.getElementById("fileInputChar");
   var resetSettingsBtn = document.getElementById("resetSettingsBtn");
@@ -1848,6 +1863,98 @@
         alert("TXTファイルの読み込みに失敗しました。ファイル形式をご確認ください。");
       }
       fileInputTXT.value = "";
+    };
+    reader.readAsText(file);
+  });
+
+  /* ============ 設定の保存・読込（JSON） ============ */
+  function serializeFullSettings(){
+    var data = {
+      type: "rare-flare-settings",
+      version: 1,
+      fortuneMode: state.fortuneMode,
+      drawCount: state.drawCount,
+      campaignTitle: state.campaignTitle,
+      showDate: state.showDate,
+      items: state.items.map(function(it){
+        return {
+          name: it.name,
+          rateRaw: it.rateRaw,
+          zeroMode: !!it.zeroMode,
+          auto: !!it.auto,
+          imageSrc: it.imageSrc || null
+        };
+      })
+    };
+    if(state.isCustomChar){
+      data.charImageSrc = state.charImageSrc;
+    }
+    return data;
+  }
+
+  function applyFullSettings(data){
+    if(!data || data.type !== "rare-flare-settings" || !Array.isArray(data.items)){
+      throw new Error("invalid settings file");
+    }
+
+    applyConditions(data); // items / Fortune Mode は既存ロジックを再利用
+
+    var loadedDrawCount = parseInt(data.drawCount, 10);
+    state.drawCount = isNaN(loadedDrawCount) ? 1 : clamp(loadedDrawCount, 1, MAX_DRAW_COUNT);
+    state.campaignTitle = typeof data.campaignTitle === "string" ? data.campaignTitle : "";
+    state.showDate = data.showDate !== false;
+
+    drawCountEl.value = state.drawCount;
+    campaignTitleEl.value = state.campaignTitle;
+    showDateCheck.checked = state.showDate;
+
+    if(typeof data.charImageSrc === "string" && data.charImageSrc.indexOf("data:image/") === 0){
+      state.charImageSrc = data.charImageSrc;
+      state.isCustomChar = true;
+    } else {
+      state.charImageSrc = DEFAULT_CHAR_SRC;
+      state.isCustomChar = false;
+    }
+    charPreviewImg.src = state.charImageSrc;
+  }
+
+  saveJsonBtn.addEventListener("click", function(){
+    state.drawCount = clamp(parseInt(drawCountEl.value, 10) || 1, 1, MAX_DRAW_COUNT);
+    state.campaignTitle = campaignTitleEl.value;
+    state.showDate = showDateCheck.checked;
+
+    var text = JSON.stringify(serializeFullSettings(), null, 2);
+    var blob = new Blob([text], {type:"application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "rare_flare_settings.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  });
+
+  loadJsonBtn.addEventListener("click", function(){ fileInputJSON.click(); });
+
+  fileInputJSON.addEventListener("change", function(){
+    var file = fileInputJSON.files && fileInputJSON.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        var data = JSON.parse(e.target.result);
+        applyFullSettings(data);
+        hideError();
+        alert("設定を読み込みました。");
+      }catch(err){
+        alert("JSONファイルの読み込みに失敗しました。Rare Flareの設定ファイルかご確認ください。");
+      }
+      fileInputJSON.value = "";
+    };
+    reader.onerror = function(){
+      alert("JSONファイルの読み込みに失敗しました。");
+      fileInputJSON.value = "";
     };
     reader.readAsText(file);
   });
