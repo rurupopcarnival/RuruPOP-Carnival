@@ -342,7 +342,6 @@
   .crop-zoom-row input[type=range]{ flex:1; accent-color:var(--pink-deep); }
   .crop-modal-buttons{ justify-content:center; }
 
-  #fileInputTXT{ display:none; }
   #fileInputJSON{ display:none; }
   #fileInputImage{ display:none; }
   #fileInputChar{ display:none; }
@@ -374,7 +373,7 @@
     <div class="left-col">
       <div class="panel panel-fortune">
         <h2><span class="dot"></span>Fortune Mode</h2>
-        <p class="desc">選ぶモードによって内部の抽選処理の個性が変わりますが、排出率には影響しません。チャレンジャーの今日の気分を聞いてみてください✨</p>
+        <p class="desc">選ぶモードによって内部の抽選処理の個性が変わりますが、排出率には影響しません。チャレンジする方に自由に選んでもらってください✨</p>
         <div class="fortune-group" id="fortuneGroup">
           <div class="fortune-btn" data-mode="aurora"><span class="emoji">🌈</span>Aurora</div>
           <div class="fortune-btn" data-mode="blossom"><span class="emoji">🌸</span>Blossom</div>
@@ -471,13 +470,11 @@
 
       <div class="panel panel-conditions">
         <h2><span class="dot"></span>排出条件情報</h2>
-        <p class="desc">Fortune Mode・景品一覧・景品画像・排出率設定・「0.をつける」設定・「残りの確率をここに設定」設定を丸ごとコピー／TXT保存／読込できます。（オリジナルアイコンと抽選回数は含まれません）</p>
+        <p class="desc">景品ごとの排出確率を一覧でコピー・保存できます</p>
         <div class="row-buttons">
           <button class="btn-soft" id="copyConditionBtn">コピー</button>
           <button class="btn-soft" id="saveTxtBtn">TXT保存</button>
-          <button class="btn-outline" id="loadTxtBtn">TXT読込</button>
         </div>
-        <input type="file" id="fileInputTXT" accept=".txt,text/plain">
 
         <div style="margin-top:14px; padding-top:14px; border-top:1px dashed var(--panel-line-soft);">
           <p class="desc" style="margin-bottom:8px;">景品・設定などをすべて初期状態に戻します。</p>
@@ -573,8 +570,6 @@
   var showDateCheck = document.getElementById("showDateCheck");
   var copyConditionBtn = document.getElementById("copyConditionBtn");
   var saveTxtBtn = document.getElementById("saveTxtBtn");
-  var loadTxtBtn = document.getElementById("loadTxtBtn");
-  var fileInputTXT = document.getElementById("fileInputTXT");
   var saveJsonBtn = document.getElementById("saveJsonBtn");
   var loadJsonBtn = document.getElementById("loadJsonBtn");
   var fileInputJSON = document.getElementById("fileInputJSON");
@@ -1769,28 +1764,26 @@
   });
 
   /*
-   * ============ 排出条件情報: コピー / TXT保存 / TXT読込 ============
-   * 保存対象は以下のみ（抽選回数・企画タイトル・日付表示・オリジナルアイコンは対象外）:
-   *   Fortune Mode / 景品一覧 / 景品画像 / 排出率設定 / 「0.をつける」設定 / 「残りの確率をここに設定」設定
+   * ============ 排出条件情報: コピー / TXT保存 ============
+   * SNSなどでそのまま貼り付けられるよう、景品名と排出確率だけのシンプルなテキストにする。
+   * 例）レジェンドレア　排出確率　0.5%
+   * Fortune Mode・画像・「0.をつける」等の内部設定までは含まない
+   * （それらも含めた完全なバックアップ／復元は「設定の保存・読込」のJSONを使う）。
    */
   function serializeConditions(){
-    var data = {
-      type: "rare-flare-conditions",
-      version: 1,
-      fortuneMode: state.fortuneMode,
-      items: state.items.map(function(it){
-        return {
-          name: it.name,
-          rateRaw: it.rateRaw,
-          zeroMode: !!it.zeroMode,
-          auto: !!it.auto,
-          imageSrc: it.imageSrc || null
-        };
-      })
-    };
-    return JSON.stringify(data, null, 2);
+    var calc = computeRates();
+    var lines = state.items
+      .filter(function(it){ return it.name && it.name.trim() !== ""; })
+      .map(function(it){
+        return it.name + "　排出確率　" + formatPercent(calc.rates[it.id] || 0);
+      });
+    return lines.join("\n");
   }
 
+  /*
+   * data(JSONオブジェクト)から景品一覧・Fortune Modeを復元する。
+   * 「設定の保存・読込」のJSON読込（applyFullSettings）から利用する共通処理。
+   */
   function applyConditions(data){
     if(!data || !Array.isArray(data.items)) throw new Error("invalid");
     var srcItems = data.items.slice(0, MAX_ITEMS);
@@ -1816,7 +1809,7 @@
     var text = serializeConditions();
     if(navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(text).then(function(){
-        alert("排出条件情報をコピーしました。");
+        alert("排出確率をコピーしました。");
       }).catch(function(){
         fallbackCopy(text);
       });
@@ -1832,7 +1825,7 @@
     ta.style.left = "-9999px";
     document.body.appendChild(ta);
     ta.select();
-    try{ document.execCommand("copy"); alert("排出条件情報をコピーしました。"); }
+    try{ document.execCommand("copy"); alert("排出確率をコピーしました。"); }
     catch(e){ alert("コピーに失敗しました。"); }
     document.body.removeChild(ta);
   }
@@ -1842,29 +1835,9 @@
     var blob = new Blob([text], {type:"text/plain"});
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
-    a.href = url; a.download = "rare_flare_conditions.txt";
+    a.href = url; a.download = "rare_flare_rates.txt";
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-  });
-
-  loadTxtBtn.addEventListener("click", function(){ fileInputTXT.click(); });
-
-  fileInputTXT.addEventListener("change", function(){
-    var file = fileInputTXT.files && fileInputTXT.files[0];
-    if(!file) return;
-    var reader = new FileReader();
-    reader.onload = function(e){
-      try{
-        var data = JSON.parse(e.target.result);
-        applyConditions(data);
-        hideError();
-        alert("排出条件情報を読み込みました。");
-      }catch(err){
-        alert("TXTファイルの読み込みに失敗しました。ファイル形式をご確認ください。");
-      }
-      fileInputTXT.value = "";
-    };
-    reader.readAsText(file);
   });
 
   /* ============ 設定の保存・読込（JSON） ============ */
