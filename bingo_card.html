@@ -361,6 +361,11 @@
 
       <div class="error-box" id="rangeError"></div>
       <div class="note-box" id="regenNote" style="display:none;">設定変更に合わせて全カードを再生成しました。</div>
+
+      <div style="margin-top:14px; padding-top:14px; border-top:1px dashed var(--line-soft);">
+        <p class="desc" style="margin-bottom:8px;">企画タイトル・カード設定・抽選済みナンバー・カード一覧・共通画像などをすべて初期状態に戻します。</p>
+        <button class="btn-danger" id="resetAllBtn" style="padding:9px 16px; font-size:12px;">🗑 オールリセット</button>
+      </div>
     </div>
 
     <div class="panel">
@@ -465,6 +470,7 @@
   var rangeEndEl = document.getElementById("rangeEnd");
   var rangeErrorEl = document.getElementById("rangeError");
   var regenNoteEl = document.getElementById("regenNote");
+  var resetAllBtn = document.getElementById("resetAllBtn");
 
   var drawnNumbersInputEl = document.getElementById("drawnNumbersInput");
   var quickDrawBtn = document.getElementById("quickDrawBtn");
@@ -1471,6 +1477,46 @@
       finish();
     }
   }
+
+  /* ============ all reset ============ */
+  resetAllBtn.addEventListener("click", function(){
+    var ok = window.confirm("オールリセットしますか？\n企画タイトル・カード設定・抽選済みナンバー・カード一覧・共通画像などがすべて初期状態に戻ります。\nこの操作は元に戻せません。");
+    if(!ok) return;
+
+    // settings
+    state.campaignTitle = "";
+    campaignTitleEl.value = "";
+
+    state.size = 5;
+    cardSizeEl.value = "5";
+    state.free = true;
+    freeCheckEl.checked = true;
+
+    var def = SIZE_DEFAULT_RANGE[5];
+    state.rangeStart = def.start;
+    state.rangeEnd = def.end;
+    rangeStartEl.value = def.start;
+    rangeEndEl.value = def.end;
+
+    state.bgColorKey = "pink";
+    renderSwatches();
+
+    state.commonImgSrc = "";
+    renderCommonImgPreview();
+
+    // drawn numbers
+    state.drawnRaw = "";
+    state.drawnSet = new Set();
+    drawnNumbersInputEl.value = "";
+
+    // cards
+    cards = [];
+    serialCounter = 0;
+    cardIdCounter = 0;
+
+    validateRange();
+    updateAll();
+  });
 
   /* ============ init ============ */
   renderSwatches();
