@@ -1,48 +1,302 @@
-
 <!doctype html><html lang="ja"><head><meta charset="utf-8">
 <title>Poppin' Pick</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
-body{font-family:sans-serif;background:#defcff;padding:20px}
-.box{max-width:480px;margin:auto;background:#fff;padding:20px;border-radius:12px}
-.row{margin:6px 0}button{width:100%;padding:10px;margin-top:8px}
-#history{white-space:pre-wrap;border:1px solid #ccc;padding:8px;margin-top:10px}
-</style></head><body><div class="box">
+:root{
+  --sky:#eaf7fb;
+  --sky-deep:#d3f0f8;
+  --cream:#fffdf7;
+  --pink:#ff8fb1;
+  --pink-dark:#ff6f9c;
+  --pink-soft:#ffe1ec;
+  --sea-ink:#1c6f8e;
+  --ink-soft:#5b7480;
+  --radius-lg:22px;
+  --radius-md:14px;
+}
+*{box-sizing:border-box}
+body{
+  font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN",sans-serif;
+  margin:0;
+  min-height:100vh;
+  padding:28px 16px;
+  background:linear-gradient(180deg,var(--sky) 0%,var(--sky-deep) 100%);
+  color:var(--sea-ink);
+}
+.box{
+  max-width:480px;
+  margin:auto;
+  background:var(--cream);
+  padding:26px 22px 30px;
+  border-radius:var(--radius-lg);
+  box-shadow:0 14px 34px rgba(28,111,142,0.18);
+}
+h2{
+  text-align:center;
+  margin:0 0 20px;
+  font-size:24px;
+  font-weight:800;
+  color:var(--sea-ink);
+  letter-spacing:.5px;
+}
+label.field{
+  display:block;
+  font-size:12.5px;
+  font-weight:700;
+  color:var(--ink-soft);
+  margin:14px 0 6px;
+}
+input[type=text],input:not([type]),#title{
+  width:100%;
+  border:2px solid var(--sky-deep);
+  border-radius:var(--radius-md);
+  padding:10px 12px;
+  font-family:inherit;
+  font-size:14px;
+  background:#fff;
+  color:var(--sea-ink);
+  outline:none;
+  transition:border-color .15s;
+}
+input:focus{border-color:var(--pink);}
+select#count{
+  width:100%;
+  border:2px solid var(--sky-deep);
+  border-radius:var(--radius-md);
+  padding:10px 12px;
+  font-family:inherit;
+  font-size:14px;
+  background:#fff;
+  color:var(--sea-ink);
+  outline:none;
+}
+select#count:focus{border-color:var(--pink);}
+#checks{margin-top:6px}
+.row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:var(--sky);
+  border-radius:var(--radius-md);
+  padding:8px 10px;
+  margin:6px 0;
+}
+.row input[type=checkbox]{
+  width:18px;height:18px;
+  accent-color:var(--pink-dark);
+  flex:0 0 auto;
+}
+.row input[type=text],.row input:not([type]){
+  flex:1;
+  border:1.5px solid #fff;
+  background:#fff;
+}
+button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:999px;
+  font-family:inherit;
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+button:active{transform:scale(.97);}
+.btn-primary{
+  background:linear-gradient(180deg,var(--pink) 0%,var(--pink-dark) 100%);
+  color:#fff;
+  box-shadow:0 8px 18px rgba(255,111,156,0.45);
+}
+.btn-primary:hover{box-shadow:0 10px 22px rgba(255,111,156,0.55);}
+.btn-soft{
+  background:var(--pink-soft);
+  color:var(--pink-dark);
+}
+.btn-soft:hover{background:#ffd0e2;}
+.btn-outline{
+  background:#fff;
+  color:var(--sea-ink);
+  border:2px solid var(--sky-deep);
+}
+.btn-outline:hover{border-color:var(--pink);color:var(--pink-dark);}
+#result{
+  margin-top:14px;
+  background:var(--pink-soft);
+  border:2px dashed var(--pink);
+  border-radius:var(--radius-md);
+  padding:14px;
+  text-align:center;
+  font-weight:800;
+  font-size:16px;
+  color:var(--pink-dark);
+  line-height:1.6;
+}
+h3{
+  margin:20px 0 6px;
+  font-size:14px;
+  color:var(--sea-ink);
+  font-weight:700;
+}
+#history{
+  white-space:pre-wrap;
+  background:var(--sky);
+  border:none;
+  border-radius:var(--radius-md);
+  padding:12px;
+  margin-top:6px;
+  font-size:13px;
+  color:var(--ink-soft);
+  max-height:220px;
+  overflow-y:auto;
+}
+/* ---------- startup (autosave restore) modal ---------- */
+.startup-modal-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(28,111,142,0.45);
+  z-index:1100;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+.startup-modal-overlay.show{
+  display:flex;
+}
+.startup-modal{
+  background:var(--cream, #fffdf7);
+  border-radius:var(--radius-lg, 22px);
+  padding:26px;
+  max-width:340px;
+  width:100%;
+  box-shadow:0 20px 50px rgba(0,0,0,0.25);
+  text-align:center;
+}
+.startup-modal h3{
+  margin:0 0 8px;
+  font-size:17px;
+  color:var(--sea-ink, #1c6f8e);
+}
+.startup-modal-desc{
+  font-size:13.5px;
+  color:var(--ink-soft, #5b7480);
+  margin:0 0 20px;
+  line-height:1.6;
+}
+.startup-modal-buttons{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+}
+.startup-modal-buttons button{margin-top:0;}
+</style></head><body>
+
+<div id="startupModalOverlay" class="startup-modal-overlay">
+  <div class="startup-modal">
+    <h3>🎈前回のデータが見つかりました</h3>
+    <p class="startup-modal-desc">続きを開きますか？</p>
+    <div class="startup-modal-buttons">
+      <button class="btn-outline" id="startupFreshBtn">新しく始める</button>
+      <button class="btn-primary" id="startupContinueBtn">続きから始める</button>
+    </div>
+  </div>
+</div>
+
+<div class="box">
 <h2>🎈Poppin' Pick</h2>
-企画名<input id="title"><br><br>
-抽選数<select id="count"><option >1</option><option selected>2</option><option >3</option><option >4</option><option >5</option><option >6</option><option >7</option><option >8</option><option >9</option><option >10</option></select>
+<label class="field" for="title">企画名</label>
+<input id="title">
+<label class="field" for="count">抽選数</label>
+<select id="count"><option >1</option><option selected>2</option><option >3</option><option >4</option><option >5</option><option >6</option><option >7</option><option >8</option><option >9</option><option >10</option></select>
 <div id="checks"></div>
-<button onclick="draw()">🎲 PICK!</button>
-<button onclick="copyTxt()">📋 履歴をコピー</button>
-<button onclick="exportTxt()">📄 履歴を保存</button>
-<button onclick="clearHistory()">履歴をクリア</button>
+<button class="btn-primary" onclick="draw()">🎲 PICK!</button>
+<button class="btn-soft" onclick="copyTxt()">📋 履歴をコピー</button>
+<button class="btn-soft" onclick="exportTxt()">📄 履歴を保存</button>
+<button class="btn-outline" onclick="clearHistory()">履歴をクリア</button>
 <div id="result">---</div>
 <h3>履歴</h3><div id="history"></div>
 </div>
+
 <script>
-const KEY="rg3";
+/* ============ autosave (localStorage) ============
+ * RuruPop Carnival 共通仕様: 変更のたびに自動保存し、
+ * 次回起動時に「続きから始める / 新しく始める」を選べるようにする。
+ * ツールごとに個別のキーを持ち、既存の「JSON保存・読込」機能とは独立している。
+ */
+var AUTOSAVE_KEY = "rurupopCarnival:poppinPick:autosave:v1";
+
 let current=[],history=[];
-for(let i=1;i<=10;i++){
- document.getElementById("checks").innerHTML+=`<div class=row><label><input type=checkbox id=c${i} checked></label> <input id=n${i} value="Sample ${i}" style="width:220px"></div>`;
-}
 const title=document.getElementById("title"),count=document.getElementById("count"),historyDiv=document.getElementById("history"),result=document.getElementById("result");
+var startupModalOverlay = document.getElementById("startupModalOverlay");
+var startupContinueBtn = document.getElementById("startupContinueBtn");
+var startupFreshBtn = document.getElementById("startupFreshBtn");
+
+for(let i=1;i<=10;i++){
+ document.getElementById("checks").innerHTML+=`<div class=row><input type=checkbox id=c${i} checked> <input id=n${i} value="Sample ${i}" style="width:220px"></div>`;
+}
+
 function now(){let d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
-function saveState(){
- let s={title:title.value,count:count.value,checks:[],names:[],history};
- for(let i=1;i<=10;i++)s.checks.push(document.getElementById("c"+i).checked);
- for(let i=1;i<=10;i++)s.names.push(document.getElementById("n"+i).value);
- localStorage.setItem(KEY,JSON.stringify(s));
+
+function buildAutosavePayload(){
+  let checks=[],names=[];
+  for(let i=1;i<=10;i++)checks.push(document.getElementById("c"+i).checked);
+  for(let i=1;i<=10;i++)names.push(document.getElementById("n"+i).value);
+  return {
+    title:title.value,
+    count:count.value,
+    checks:checks,
+    names:names,
+    history:history,
+    current:current
+  };
 }
-function load(){
- let raw=localStorage.getItem(KEY);
- if(raw){
-  let s=JSON.parse(raw);
-  title.value=s.title||"";count.value=s.count||2;
-  if(s.checks)s.checks.forEach((v,i)=>document.getElementById("c"+(i+1)).checked=v);
-  if(s.names)s.names.forEach((v,i)=>document.getElementById("n"+(i+1)).value=v);
-  history=s.history||[];
- }
- render();
+
+function autoSaveNow(){
+  try{
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(buildAutosavePayload()));
+  }catch(e){
+    // ストレージが使用できない/満杯などの場合は、操作を妨げないよう静かに無視する
+  }
 }
+
+var autoSaveTimer = null;
+function scheduleAutoSave(){
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(autoSaveNow, 400);
+}
+
+function clearAutoSave(){
+  try{ localStorage.removeItem(AUTOSAVE_KEY); }catch(e){}
+}
+
+function loadAutosaveRaw(){
+  try{
+    var raw = localStorage.getItem(AUTOSAVE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){
+    return null;
+  }
+}
+
+function restoreFromAutosave(data){
+  try{
+    title.value=data.title||"";
+    count.value=data.count||2;
+    if(data.checks)data.checks.forEach((v,i)=>document.getElementById("c"+(i+1)).checked=v);
+    if(data.names)data.names.forEach((v,i)=>document.getElementById("n"+(i+1)).value=v);
+    history=data.history||[];
+    current=data.current||[];
+    result.innerHTML=current.length?current.join("<br>"):"---";
+    render();
+  }catch(e){
+    console.error("自動保存データの復元に失敗しました", e);
+  }
+}
+
 function draw(){
  let p=[];
  for(let i=1;i<=10;i++) if(document.getElementById("c"+i).checked) p.push(document.getElementById("n"+i).value);
@@ -55,14 +309,10 @@ function draw(){
  current=p.slice(0,n);
  result.innerHTML=current.join("<br>");
  history.push({date:now(),title:title.value||"Poppin' Pick",result:[...current]});
- saveState();
  render();
+ autoSaveNow();
 }
-function saveResult(){
- if(!current.length){alert("先にガチャ");return;}
- history.push({date:now(),title:title.value||"Poppin' Pick",result:[...current]});
- saveState();render();
-}
+
 function render(){
  if(!history.length){historyDiv.textContent="履歴なし";return;}
  let t="";
@@ -122,11 +372,38 @@ function clearHistory(){
  history=[];
  current=[];
  result.innerHTML="---";
- saveState();
  render();
+ autoSaveNow();
 }
 
-document.addEventListener("change",saveState);
-document.addEventListener("input",saveState);
-load();
-</script></body></html>
+/* ============ 自動保存フックの登録 ============ */
+title.addEventListener("input", scheduleAutoSave);
+count.addEventListener("change", autoSaveNow);
+for(let i=1;i<=10;i++){
+  document.getElementById("c"+i).addEventListener("change", autoSaveNow);
+  document.getElementById("n"+i).addEventListener("input", scheduleAutoSave);
+}
+
+/* ============ init / autosave restore prompt ============ */
+render();
+
+(function initAutosavePrompt(){
+  var saved = loadAutosaveRaw();
+  if(!saved){
+    return; // 保存データなし。通常の初期状態のまま。
+  }
+  startupModalOverlay.classList.add("show");
+
+  startupContinueBtn.addEventListener("click", function(){
+    restoreFromAutosave(saved);
+    startupModalOverlay.classList.remove("show");
+  });
+
+  startupFreshBtn.addEventListener("click", function(){
+    clearAutoSave();
+    startupModalOverlay.classList.remove("show");
+    // state はすでに初期状態のままなので追加の処理は不要
+  });
+})();
+</script>
+</body></html>
