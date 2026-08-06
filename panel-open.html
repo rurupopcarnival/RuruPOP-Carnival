@@ -241,6 +241,17 @@
 </head>
 <body>
 
+<div class="modal-overlay" id="startupModalOverlay">
+  <div class="modal-card">
+    <h3>前回のデータが見つかりました</h3>
+    <p>続きを開きますか？<br>※元絵は再登録してください。</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="startupFreshBtn">新しく始める</button>
+      <button class="btn btn-primary" id="startupContinueBtn">続きから始める</button>
+    </div>
+  </div>
+</div>
+
 <header>
   <span class="badge"><span class="dot"></span>RuruPOP Carnival</span>
   <h1>Panel <em>OPEN</em></h1>
@@ -400,6 +411,112 @@
   }
   function escapeHtml(str){
     return str.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+
+  /* ============ autosave (localStorage) ============
+   * 変更のたびに自動保存し、次回起動時に「続きから始める / 新しく始める」を選べるようにする。
+   * 既存の「JSON保存・読込」機能とは完全に独立した別実装（統合しない・依存させない）。
+   * 画像は保存対象外（JSON保存と同様、復元後に元画像の再選択をお願いする）。
+   */
+  const AUTOSAVE_KEY = "rurupopCarnival:panelOpen:autosave:v1";
+
+  function buildAutosavePayload(){
+    return {
+      version: 1,
+      cols, rows,
+      nextGroupId,
+      activeGroupId,
+      groups: groups.map(g=>({
+        id: g.id,
+        name: g.name,
+        color: g.color,
+        cells: Array.from(g.cells),
+        showName: g.showName,
+        useNumbers: g.useNumbers,
+        labelAnchor: g.labelAnchor,
+        labelSize: g.labelSize,
+        condition: {
+          name: g.condition.name,
+          goal: g.condition.goal,
+          current: g.condition.current,
+          state: g.condition.state
+        }
+      }))
+    };
+  }
+
+  function autoSaveNow(){
+    try{
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(buildAutosavePayload()));
+    }catch(e){
+      // ストレージが使用できない/満杯などの場合は、操作を妨げないよう静かに無視する
+    }
+  }
+
+  let autoSaveTimer = null;
+  function scheduleAutoSave(){
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(autoSaveNow, 400);
+  }
+
+  function clearAutoSave(){
+    try{ localStorage.removeItem(AUTOSAVE_KEY); }catch(e){}
+  }
+
+  function loadAutosaveRaw(){
+    try{
+      const raw = localStorage.getItem(AUTOSAVE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function restoreFromAutosave(data){
+    try{
+      cols = Math.min(10, Math.max(1, parseInt(data.cols) || 5));
+      rows = Math.min(10, Math.max(1, parseInt(data.rows) || 5));
+      colsInput.value = cols; rowsInput.value = rows;
+
+      groups = (data.groups || []).map(gd => ({
+        id: gd.id,
+        name: gd.name || ('条件' + gd.id),
+        color: gd.color || palette[(gd.id-1) % palette.length],
+        cells: new Set(Array.isArray(gd.cells) ? gd.cells : []),
+        showName: gd.showName !== false,
+        useNumbers: gd.useNumbers !== false,
+        labelAnchor: (typeof gd.labelAnchor === 'number') ? gd.labelAnchor : null,
+        labelSize: ['small','medium','large'].includes(gd.labelSize) ? gd.labelSize : 'small',
+        condition: {
+          name: (gd.condition && gd.condition.name) || '',
+          goal: (gd.condition && gd.condition.goal != null) ? gd.condition.goal : 100,
+          current: (gd.condition && gd.condition.current != null) ? gd.condition.current : 0,
+          state: (gd.condition && gd.condition.state) || 'close'
+        }
+      }));
+      if(groups.length === 0) groups = [ newGroup(1) ];
+      nextGroupId = data.nextGroupId || (Math.max(...groups.map(g=>g.id)) + 1);
+      activeGroupId = groups.some(g=>g.id===data.activeGroupId) ? data.activeGroupId : groups[0].id;
+      labelPickGroupId = null;
+
+      // 画像は保存対象外のため、未設定状態に戻して選び直しを促す
+      hasImage = false;
+      artwork.src = '';
+      artwork.style.display = 'none';
+      stageEmpty.style.display = 'flex';
+      stage.style.aspectRatio = '4/3';
+      fileInput.value = '';
+      filePickedRow.style.display = 'none';
+
+      buildGrid();
+      renderGroupChips();
+      renderCondCards();
+      showStep(1);
+      loadNotice.textContent = '前回の続きを復元しました。続けて元画像を選択してください。';
+      loadNotice.style.display = 'block';
+    }catch(e){
+      console.error('自動保存データの復元に失敗しました', e);
+    }
   }
 
   const stageFrame = document.getElementById('stageFrame');
@@ -637,7 +754,9 @@
       renderGroupChips();
       renderCondCards();
       showStep(1);
+      loadNotice.textContent = '設定を読み込みました。続けて元画像を選択してください。';
       loadNotice.style.display = 'block';
+      autoSaveNow(); // 読み込んだ内容を自動保存にも反映しておく
     };
     reader.readAsText(file);
   }
@@ -754,8 +873,8 @@
     rows = Math.min(10, Math.max(1, parseInt(rowsInput.value) || 1));
     colsInput.value = cols; rowsInput.value = rows;
   }
-  colsInput.addEventListener('input', ()=>{ clampGrid(); buildGrid(); });
-  rowsInput.addEventListener('input', ()=>{ clampGrid(); buildGrid(); });
+  colsInput.addEventListener('input', ()=>{ clampGrid(); buildGrid(); scheduleAutoSave(); });
+  rowsInput.addEventListener('input', ()=>{ clampGrid(); buildGrid(); scheduleAutoSave(); });
 
   function buildGrid(){
     panelGrid.innerHTML = '';
@@ -794,6 +913,7 @@
         refreshCellVisuals();
         renderCondCards();
         updateStageHint();
+        autoSaveNow();
       }
       return;
     }
@@ -804,6 +924,7 @@
     if(g.cells.has(idx)) g.cells.delete(idx); else g.cells.add(idx);
     refreshCellVisuals();
     renderGroupCount();
+    autoSaveNow();
   }
 
   function ungroupedIndices(){
@@ -923,6 +1044,7 @@
       renderGroupChips();
       renderCondCards();
       renderGroupCount();
+      autoSaveNow();
     });
     groupChips.appendChild(add);
     renderGroupCount();
@@ -974,13 +1096,14 @@
           </div>
         </div>`;
 
-      card.querySelector('.cname').addEventListener('input', e=>{ g.condition.name = e.target.value; refreshCellVisuals(); });
-      card.querySelector('.showNameChk').addEventListener('change', e=>{ g.showName = e.target.checked; refreshCellVisuals(); });
+      card.querySelector('.cname').addEventListener('input', e=>{ g.condition.name = e.target.value; refreshCellVisuals(); scheduleAutoSave(); });
+      card.querySelector('.showNameChk').addEventListener('change', e=>{ g.showName = e.target.checked; refreshCellVisuals(); autoSaveNow(); });
       card.querySelector('.useNumChk').addEventListener('change', e=>{
         g.useNumbers = e.target.checked;
         card.querySelector('.cond-nums').style.display = g.useNumbers ? 'flex' : 'none';
         card.querySelector('.progress-track').style.display = g.useNumbers ? 'block' : 'none';
         refreshCellVisuals();
+        autoSaveNow();
       });
       const goalInput = card.querySelector('.goal');
       const curInput = card.querySelector('.current');
@@ -990,6 +1113,7 @@
         g.condition.current = parseFloat(curInput.value) || 0;
         fill.style.width = progressPct(g) + '%';
         refreshCellVisuals();
+        scheduleAutoSave();
       }
       goalInput.addEventListener('input', updateProgress);
       curInput.addEventListener('input', updateProgress);
@@ -999,6 +1123,7 @@
           card.querySelectorAll('.state-toggle button').forEach(b=>b.className = '');
           btn.className = 'active ' + btn.dataset.state;
           refreshCellVisuals();
+          autoSaveNow();
         });
       });
       card.querySelector('.lp-pick-btn').addEventListener('click', ()=>{
@@ -1011,12 +1136,14 @@
         g.labelAnchor = null;
         refreshCellVisuals();
         renderCondCards();
+        autoSaveNow();
       });
       card.querySelectorAll('.lsz-toggle button').forEach(btn=>{
         btn.addEventListener('click', ()=>{
           g.labelSize = btn.dataset.size;
           card.querySelectorAll('.lsz-toggle button').forEach(b=> b.classList.toggle('active', b===btn));
           refreshCellVisuals();
+          autoSaveNow();
         });
       });
       condCards.appendChild(card);
@@ -1105,6 +1232,7 @@
     renderGroupChips();
     renderCondCards();
     showStep(1);
+    autoSaveNow(); // リセット後の初期状態を保存し直す
     toast('新しいパネルを作成しました');
   }
   newPanelBtn.addEventListener('click', ()=>{
@@ -1121,6 +1249,28 @@
   renderGroupChips();
   renderCondCards();
   showStep(1);
+
+  /* ============ init / autosave restore prompt ============ */
+  const startupModalOverlay = document.getElementById('startupModalOverlay');
+  const startupContinueBtn = document.getElementById('startupContinueBtn');
+  const startupFreshBtn = document.getElementById('startupFreshBtn');
+
+  (function initAutosavePrompt(){
+    const saved = loadAutosaveRaw();
+    if(!saved) return; // 保存データなし。通常の初期状態のまま。
+    startupModalOverlay.classList.add('open');
+
+    startupContinueBtn.addEventListener('click', ()=>{
+      restoreFromAutosave(saved);
+      startupModalOverlay.classList.remove('open');
+    });
+
+    startupFreshBtn.addEventListener('click', ()=>{
+      clearAutoSave();
+      startupModalOverlay.classList.remove('open');
+      // stateはすでに初期状態のままなので追加の処理は不要
+    });
+  })();
 </script>
 
 </body>
