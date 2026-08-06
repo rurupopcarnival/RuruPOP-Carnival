@@ -111,6 +111,21 @@
   }
   @media (max-width: 860px){
     .layout{grid-template-columns:1fr;}
+
+    /*
+     * スマホ表示のみ、利用頻度順に並び替える。
+     * DOM構造は変更せず、left-col / right-col を display:contents にして
+     * 中の各 .panel を .layout の直接の子として order で並び替える。
+     * PC版（860px超）は通常のグリッドのまま、見た目・構造とも変更なし。
+     */
+    .left-col, .right-col{
+      display:contents;
+    }
+    .panel-draw{order:1;}     /* 1. 抽選設定・抽選ボタン・抽選結果 */
+    .panel-char{order:2;}     /* 2. 結果画像・PNG保存など結果関連 */
+    .panel-history{order:3;}  /* 3. 抽選履歴 */
+    .panel-items{order:4;}    /* 4. 景品設定 */
+    .panel-manage{order:5;}   /* 5. 保存・読込・その他管理機能 */
   }
 
   .panel{
@@ -720,7 +735,7 @@
   <div class="layout">
     <!-- LEFT: prizes -->
     <div class="left-col">
-      <div class="panel">
+      <div class="panel panel-items">
         <h2><span class="dot"></span>景品設定</h2>
         <p class="desc">景品名と「個数」を設定してください。個数がそのまま玉の数になります。現在の確率は自動計算されるため編集できません。</p>
 
@@ -738,7 +753,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel panel-history">
         <h2><span class="dot"></span>履歴</h2>
         <p class="desc">これまでの抽選結果が新しい順に並びます。</p>
         <div id="historyList"><div class="history-empty">まだ履歴はありません</div></div>
@@ -750,7 +765,7 @@
 
     <!-- RIGHT: settings + result -->
     <div class="right-col">
-      <div class="panel">
+      <div class="panel panel-draw">
         <h2><span class="dot"></span>抽選設定</h2>
 
         <div class="setting-line">
@@ -795,7 +810,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel panel-char">
         <h2><span class="dot"></span>結果画像の設定</h2>
 
         <div class="field-block">
@@ -839,7 +854,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel panel-manage">
         <h2><span class="dot"></span>設定の保存・読込</h2>
         <p class="desc">景品・抽選回数・玉の扱いなどをJSONファイルに保存／読込できます。</p>
         <div class="row-buttons">
