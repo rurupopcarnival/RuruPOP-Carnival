@@ -95,7 +95,22 @@
 
   /* ---------- layout ---------- */
   .layout{ display:grid; grid-template-columns:1.15fr 1fr; gap:18px; align-items:start; }
-  @media (max-width:860px){ .layout{grid-template-columns:1fr;} }
+  @media (max-width:860px){
+    .layout{ grid-template-columns:1fr; }
+    /*
+     * スマホ表示のみ、左右カラムの入れ物(.left-col/.right-col)を display:contents にして
+     * レイアウトツリーから消し、中のパネルを直接 .layout の grid item にすることで、
+     * DOM構造を変えずに CSS の order だけで表示順を並び替える。
+     */
+    .left-col, .right-col{ display:contents; }
+    .panel-drawsettings{ order:1; }
+    .panel-fortune{ order:2; }
+    .panel-result{ order:3; }
+    .panel-imagesettings{ order:4; }
+    .panel-history{ order:5; }
+    .panel-items{ order:6; }
+    .panel-conditions{ order:7; }
+  }
 
   .panel{
     background:var(--panel);
@@ -235,6 +250,8 @@
   .rate-sum-box.ok .val{ color:var(--ok); }
   .rate-sum-box.over{ background:var(--danger-bg); border-color:rgba(255,120,150,0.4); }
   .rate-sum-box.over .val{ color:var(--danger); }
+  .rate-sum-box.under{ background:rgba(255,207,106,0.14); border-color:rgba(255,207,106,0.4); }
+  .rate-sum-box.under .val{ color:var(--star); }
 
   /* ---------- draw button ---------- */
   .round-btn-wrap{ margin:18px 0 6px; text-align:center; }
@@ -351,11 +368,11 @@
   </div>
 
   <div class="layout">
-    <!-- LEFT: fortune mode + prizes -->
+    <!-- LEFT: fortune mode + prizes (desktop column; on mobile these panels are re-ordered via CSS order) -->
     <div class="left-col">
-      <div class="panel">
+      <div class="panel panel-fortune">
         <h2><span class="dot"></span>Fortune Mode</h2>
-        <p class="desc">Fortune Modeごとに内部の抽選方法が異なります。理論上の排出率は同一ですが、どのモードを選ぶかはあなた次第です✨</p>
+        <p class="desc">選ぶモードによってF内部の抽選方法が異なります。理論上の排出率は同一ですが、どのモードを選ぶかはあなた次第です✨</p>
         <div class="fortune-group" id="fortuneGroup">
           <div class="fortune-btn" data-mode="aurora"><span class="emoji">🌈</span>Aurora</div>
           <div class="fortune-btn" data-mode="blossom"><span class="emoji">🌸</span>Blossom</div>
@@ -363,9 +380,9 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel panel-items">
         <h2><span class="dot"></span>景品設定</h2>
-        <p class="desc">景品名・画像・排出率を設定してください。排出率は「0.」チェックや自由入力、AUTOで直感的に調整できます。</p>
+        <p class="desc">景品名・画像・排出率を設定してください。レア景品から順に入力し、最後に「残りの確率をここに設定」で末等へまとめるのがおすすめです。</p>
 
         <div class="bulk-row">
           <label for="bulkCount">景品数を一括生成</label>
@@ -383,10 +400,11 @@
 
         <div class="row-buttons">
           <button class="btn-primary" id="addItemBtn">＋ 景品追加</button>
+          <button class="btn-outline" id="sortByRateBtn">排出率順に並び替え</button>
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel panel-history">
         <h2><span class="dot"></span>履歴</h2>
         <p class="desc">これまでの抽選結果が新しい順に並びます。</p>
         <div id="historyList"><div class="history-empty">まだ履歴はありません</div></div>
@@ -396,9 +414,9 @@
       </div>
     </div>
 
-    <!-- RIGHT: draw + result + settings -->
+    <!-- RIGHT: draw + result + settings (desktop column; on mobile these panels are re-ordered via CSS order) -->
     <div class="right-col">
-      <div class="panel">
+      <div class="panel panel-drawsettings">
         <h2><span class="dot"></span>抽選設定</h2>
 
         <div class="setting-line">
@@ -410,6 +428,10 @@
           <button id="drawBtn">🔮 運命を視る 🔮</button>
           <div class="error-box" id="errorBox"></div>
         </div>
+      </div>
+
+      <div class="panel panel-result">
+        <h2><span class="dot"></span>抽選結果</h2>
 
         <div id="resultArea">
           <div class="result-empty">「運命を視る」を押すと、ここに結果が表示されます</div>
@@ -420,7 +442,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel panel-imagesettings">
         <h2><span class="dot"></span>結果画像の設定</h2>
 
         <div class="field-block">
@@ -445,7 +467,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel panel-conditions">
         <h2><span class="dot"></span>排出条件情報</h2>
         <p class="desc">Fortune Mode・景品一覧・景品画像・排出率設定・「0.をつける」設定・「残りの確率をここに設定」設定を丸ごとコピー／TXT保存／読込できます。（オリジナルアイコンと抽選回数は含まれません）</p>
         <div class="row-buttons">
@@ -523,6 +545,7 @@
   var bulkCountEl = document.getElementById("bulkCount");
   var bulkGenBtn = document.getElementById("bulkGenBtn");
   var addItemBtn = document.getElementById("addItemBtn");
+  var sortByRateBtn = document.getElementById("sortByRateBtn");
   var rateSumBox = document.getElementById("rateSumBox");
   var rateSumVal = document.getElementById("rateSumVal");
   var fortuneGroupEl = document.getElementById("fortuneGroup");
@@ -619,27 +642,44 @@
 
   /*
    * 排出率の計算。
-   * AUTOに指定された景品（未指定なら一番下の景品）は
+   * 初期状態では、すべての景品を自由入力できる（自動計算される景品は無い＝autoId:null）。
+   * ユーザーが「残りの確率をここに設定」をチェックした景品（1つまで）だけ、
    * 100% - 他景品の排出率合計 を自動で受け取る。
-   * 他景品の合計が100%を超えている場合は over=true とする。
+   *   ・autoId が null の場合: 全景品の入力値の合計で判定する
+   *       - 合計が100%を超えていれば over:true
+   *       - 合計が100%未満であれば under:true
+   *   ・autoId が設定されている場合: その景品以外の合計が100%を超えていなければ、
+   *     常にちょうど100%になるよう自動計算する（under状態にはならない）
    */
   function computeRates(){
     var items = state.items;
-    var res = { rates:{}, autoId:null, sumOthers:0, over:false };
+    var res = { rates:{}, autoId:null, sum:0, over:false, under:false, valid:false };
     if(items.length === 0) return res;
+
     var explicit = items.filter(function(it){ return !!it.auto; });
-    var autoItem = explicit.length > 0 ? explicit[0] : items[items.length-1];
-    res.autoId = autoItem.id;
-    var sum = 0;
+    var autoItem = explicit.length > 0 ? explicit[0] : null;
+    res.autoId = autoItem ? autoItem.id : null;
+
+    var sumOthers = 0;
     items.forEach(function(it){
       if(it.id === res.autoId) return;
       var r = parseRatePercent(it);
       res.rates[it.id] = r;
-      sum = roundTo12(sum + r);
+      sumOthers = roundTo12(sumOthers + r);
     });
-    res.sumOthers = sum;
-    res.over = sum > 100 + 1e-9;
-    res.rates[res.autoId] = res.over ? 0 : roundTo12(100 - sum);
+
+    if(res.autoId === null){
+      res.sum = sumOthers;
+      res.over = res.sum > 100 + 1e-9;
+      res.under = !res.over && res.sum < 100 - 1e-9;
+      res.valid = !res.over && !res.under;
+    } else {
+      res.over = sumOthers > 100 + 1e-9;
+      res.rates[res.autoId] = res.over ? 0 : roundTo12(100 - sumOthers);
+      res.sum = res.over ? sumOthers : 100;
+      res.under = false;
+      res.valid = !res.over;
+    }
     return res;
   }
 
@@ -1043,33 +1083,21 @@
       ref.zeroCheck.disabled = isAuto;
       ref.row.classList.toggle("auto-row", isAuto);
       ref.autoLabel.classList.toggle("active", isAuto);
-      ref.autoCheck.checked = !!it.auto; // 明示的にチェックされている景品のみON表示（未設定時の暗黙AUTOは枠のハイライトのみ）
+      ref.autoCheck.checked = !!it.auto; // チェックされている景品のみON表示
       ref.badge.textContent = formatPercent(calc.rates[it.id] || 0);
     });
 
+    // 排出率合計の表示はあくまで参考情報。実際の検証は「運命を視る」を押した時に行う。
+    rateSumBox.classList.remove("over", "under", "ok");
     if(calc.over){
       rateSumBox.classList.add("over");
-      rateSumBox.classList.remove("ok");
-      rateSumVal.textContent = formatPercent(calc.sumOthers) + "（100%超過）";
+      rateSumVal.textContent = formatPercent(calc.sum) + "（100%超過）";
+    } else if(calc.under){
+      rateSumBox.classList.add("under");
+      rateSumVal.textContent = formatPercent(calc.sum) + "（100%未満）";
     } else {
-      rateSumBox.classList.remove("over");
       rateSumBox.classList.add("ok");
       rateSumVal.textContent = "100%";
-    }
-
-    var hasEligible = state.items.some(function(it){
-      return it.name && it.name.trim() !== "" && (calc.rates[it.id] || 0) > 0;
-    });
-
-    if(calc.over){
-      showError("排出率の合計が100%を超えています。設定を見直してください。");
-      drawBtn.disabled = true;
-    } else if(!hasEligible){
-      hideError();
-      drawBtn.disabled = true;
-    } else {
-      hideError();
-      drawBtn.disabled = false;
     }
   }
 
@@ -1099,6 +1127,20 @@
     state.items = newItems;
     renderItemList();
   });
+
+  /*
+   * 排出率順に並び替え（排出率の小さい順＝レア順）。
+   * 景品は1つのオブジェクトに名前・画像・排出率・「0.をつける」・「残りの確率をここに設定」を
+   * まとめて保持しているため、配列ごと並び替えるだけで、それらの設定がずれることなく一緒に移動する。
+   */
+  function sortItemsByRate(){
+    var calc = computeRates();
+    state.items = state.items.slice().sort(function(a, b){
+      return (calc.rates[a.id] || 0) - (calc.rates[b.id] || 0);
+    });
+    renderItemList();
+  }
+  sortByRateBtn.addEventListener("click", sortItemsByRate);
 
   /* ============ Seed生成（Fortune Mode） ============ */
   /*
@@ -1279,7 +1321,11 @@
 
     var calc = computeRates();
     if(calc.over){
-      showError("排出率の合計が100%を超えています。設定を見直してください。");
+      showError("排出率の合計が100%を超えています。");
+      return;
+    }
+    if(calc.under){
+      showError("確率が100%未満です。残りの確率を設定してください。");
       return;
     }
     var eligible = state.items.filter(function(it){
@@ -1303,36 +1349,40 @@
     drawBtn.textContent = "🔮 運命を視ています… 🔮";
 
     setTimeout(function(){
-      var seed = buildSeed(state.fortuneMode);
-      var rng = mulberry32(seed.seedNum);
-      var pick = buildPicker(state.fortuneMode, rng, pool, poolTotal);
+      try{
+        var seed = buildSeed(state.fortuneMode);
+        var rng = mulberry32(seed.seedNum);
+        var pick = buildPicker(state.fortuneMode, rng, pool, poolTotal);
 
-      /*
-       * 999,999回規模の大量抽選でも軽快に動作するよう、当選名を1件ずつ配列へ
-       * 積み上げるのではなく、その場で件数だけを集計する（メモリ・描画コストとも
-       * 景品の種類数のみに依存し、抽選回数には依存しない）。
-       */
-      var counts = {};
-      for(var i=0;i<n;i++){
-        var name = pick().name;
-        counts[name] = (counts[name] || 0) + 1;
+        /*
+         * 999,999回規模の大量抽選でも軽快に動作するよう、当選名を1件ずつ配列へ
+         * 積み上げるのではなく、その場で件数だけを集計する（メモリ・描画コストとも
+         * 景品の種類数のみに依存し、抽選回数には依存しない）。
+         */
+        var counts = {};
+        for(var i=0;i<n;i++){
+          var name = pick().name;
+          counts[name] = (counts[name] || 0) + 1;
+        }
+        var summary = aggregateFromCounts(counts);
+
+        var now = new Date();
+        lastResult = { summary: summary, totalCount: n, timestamp: now, fortuneMode: state.fortuneMode, seedHex: seed.seedHex };
+        history.unshift(lastResult);
+        if(history.length > 50) history.pop();
+
+        drawBtn.classList.add("shaking");
+        setTimeout(function(){ drawBtn.classList.remove("shaking"); }, 500);
+
+        renderResult(lastResult);
+        renderHistory();
+        resultActions.style.display = "flex";
+      } finally {
+        // 途中で例外が起きた場合でもボタンが押せなくなったままにならないよう、必ず復帰させる
+        drawBtn.textContent = DRAW_BTN_DEFAULT_LABEL;
+        drawBtn.disabled = false;
+        refreshRates(); // 排出率合計の表示などを最新状態に更新
       }
-      var summary = aggregateFromCounts(counts);
-
-      var now = new Date();
-      lastResult = { summary: summary, totalCount: n, timestamp: now, fortuneMode: state.fortuneMode, seedHex: seed.seedHex };
-      history.unshift(lastResult);
-      if(history.length > 50) history.pop();
-
-      drawBtn.textContent = DRAW_BTN_DEFAULT_LABEL;
-      refreshRates(); // 現在の設定に応じて disabled / エラー状態を再評価する
-
-      drawBtn.classList.add("shaking");
-      setTimeout(function(){ drawBtn.classList.remove("shaking"); }, 500);
-
-      renderResult(lastResult);
-      renderHistory();
-      resultActions.style.display = "flex";
     }, 10);
   }
 
