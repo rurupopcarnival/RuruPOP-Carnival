@@ -1,0 +1,1850 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Rare Flare | Rurupop Carnival</title>
+<style>
+  :root{
+    --deep:#0a0e2a;
+    --deep2:#141a4a;
+    --purple:#6a3fd1;
+    --purple-deep:#4a27a8;
+    --blue:#3f7fe0;
+    --blue-deep:#2a55b0;
+    --pink:#ff6fae;
+    --pink-deep:#e0468f;
+    --star:#ffe9a8;
+    --ink:#eef0ff;
+    --ink-soft:#b7b6e6;
+    --panel:rgba(20,20,55,0.55);
+    --panel-line:rgba(180,170,255,0.28);
+    --panel-line-soft:rgba(180,170,255,0.14);
+    --danger:#ff7aa2;
+    --danger-bg:rgba(255,80,120,0.14);
+    --ok:#7fe7c4;
+    --radius-lg:22px;
+    --radius-md:14px;
+    --radius-sm:9px;
+    --shadow-soft:0 8px 24px rgba(20,10,60,0.45);
+    --shadow-pop:0 10px 30px rgba(150,80,220,0.45);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:"Hiragino Maru Gothic ProN","Yu Gothic",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(ellipse at 15% 10%, rgba(120,80,255,0.35) 0%, transparent 45%),
+      radial-gradient(ellipse at 85% 0%, rgba(255,110,180,0.28) 0%, transparent 40%),
+      radial-gradient(ellipse at 50% 100%, rgba(60,140,255,0.25) 0%, transparent 55%),
+      linear-gradient(160deg, var(--deep) 0%, var(--deep2) 55%, #1c1350 100%);
+    padding:28px 16px 60px;
+    position:relative;
+    overflow-x:hidden;
+  }
+  .starfield{
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      radial-gradient(1.5px 1.5px at 10% 20%, #fff 100%, transparent),
+      radial-gradient(1.5px 1.5px at 80% 10%, #fff 100%, transparent),
+      radial-gradient(1px 1px at 30% 70%, #fff 100%, transparent),
+      radial-gradient(1.5px 1.5px at 60% 85%, #fff 100%, transparent),
+      radial-gradient(1px 1px at 90% 60%, #fff 100%, transparent),
+      radial-gradient(1.5px 1.5px at 45% 35%, #fff 100%, transparent),
+      radial-gradient(1px 1px at 20% 90%, #fff 100%, transparent),
+      radial-gradient(1.5px 1.5px at 70% 45%, #fff 100%, transparent);
+    background-repeat:no-repeat;
+    opacity:.55;
+    animation:twinkle 6s ease-in-out infinite alternate;
+  }
+  @keyframes twinkle{ 0%{opacity:.3;} 100%{opacity:.7;} }
+
+  .wrap{ max-width:1080px; margin:0 auto; position:relative; z-index:1; }
+
+  /* ---------- header ---------- */
+  .hero{
+    display:flex; align-items:center; gap:18px;
+    margin-bottom:22px; padding:20px 26px;
+    background:linear-gradient(120deg, rgba(106,63,209,0.35), rgba(255,111,174,0.22));
+    border:1px solid var(--panel-line);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-soft);
+    position:relative; overflow:hidden;
+    backdrop-filter:blur(6px);
+  }
+  .hero::after{
+    content:""; position:absolute; right:-50px; top:-50px; width:180px;height:180px;
+    background:radial-gradient(circle, var(--pink) 0%, transparent 70%); opacity:.35; border-radius:50%;
+  }
+  .hero-badge{
+    flex:0 0 auto; width:58px;height:58px; border-radius:50%;
+    background:conic-gradient(var(--blue) 0deg 120deg, var(--purple) 120deg 240deg, var(--pink) 240deg 360deg);
+    box-shadow:inset 0 0 0 4px rgba(10,10,30,0.7), 0 4px 14px rgba(120,60,220,0.5);
+    position:relative; z-index:1;
+  }
+  .hero-badge::after{
+    content:""; position:absolute; left:15px; top:11px; width:16px;height:9px;
+    background:rgba(255,255,255,0.6); border-radius:50%; transform:rotate(-25deg);
+  }
+  .hero-text{position:relative;z-index:1;}
+  .hero-text h1{ margin:0; font-size:26px; letter-spacing:.03em; color:#fff; text-shadow:0 0 14px rgba(150,100,255,0.6); }
+  .hero-text h1 span{ background:linear-gradient(90deg,var(--blue),var(--purple),var(--pink)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hero-text p{ margin:4px 0 0; font-size:13px; color:var(--ink-soft); }
+
+  /* ---------- layout ---------- */
+  .layout{ display:grid; grid-template-columns:1.15fr 1fr; gap:18px; align-items:start; }
+  @media (max-width:860px){ .layout{grid-template-columns:1fr;} }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:var(--radius-lg);
+    padding:20px;
+    box-shadow:var(--shadow-soft);
+    margin-bottom:18px;
+    backdrop-filter:blur(8px);
+  }
+  .panel h2{ margin:0 0 4px; font-size:16px; color:#fff; display:flex; align-items:center; gap:8px; }
+  .panel h2 .dot{ width:9px;height:9px;border-radius:50%; background:linear-gradient(135deg,var(--blue),var(--pink)); display:inline-block; box-shadow:0 0 8px rgba(255,111,174,0.8); }
+  .panel .desc{ font-size:12px; color:var(--ink-soft); margin:0 0 14px; line-height:1.6; }
+
+  /* ---------- bulk row ---------- */
+  .bulk-row{ display:flex; gap:8px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+  .bulk-row label{ font-size:12px; color:var(--ink-soft); white-space:nowrap; }
+  .bulk-row input[type=number]{ width:70px; }
+  .bulk-row .cap-note{ font-size:11px; color:var(--ink-soft); }
+
+  /* ---------- fortune mode ---------- */
+  .fortune-group{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+  .fortune-btn{
+    flex:1 1 0; min-width:110px; padding:14px 10px; text-align:center;
+    background:rgba(255,255,255,0.04); border:1.5px solid var(--panel-line-soft);
+    border-radius:var(--radius-md); color:var(--ink-soft); font-weight:700; font-size:13px;
+    cursor:pointer; transition:all .15s;
+  }
+  .fortune-btn .emoji{ display:block; font-size:22px; margin-bottom:4px; }
+  .fortune-btn.active{
+    background:linear-gradient(135deg, rgba(63,127,224,0.35), rgba(106,63,209,0.35), rgba(255,111,174,0.35));
+    border-color:transparent; color:#fff;
+    box-shadow:0 0 0 2px rgba(255,255,255,0.15), 0 6px 16px rgba(150,80,220,0.4);
+  }
+
+  /* ---------- item list ---------- */
+  #itemList{ display:flex; flex-direction:column; gap:10px; max-height:600px; overflow-y:auto; padding-right:4px; margin-bottom:12px; }
+  #itemList::-webkit-scrollbar{ width:8px; }
+  #itemList::-webkit-scrollbar-thumb{ background:var(--purple); border-radius:8px; }
+
+  .item-row{
+    background:rgba(255,255,255,0.035);
+    border:1px solid var(--panel-line-soft);
+    border-radius:var(--radius-md);
+    padding:10px 12px;
+    display:grid;
+    grid-template-columns:26px 40px 1fr auto;
+    gap:8px 10px;
+    align-items:center;
+  }
+  .item-row.auto-row{ border-color:rgba(255,215,120,0.5); background:rgba(255,215,120,0.06); }
+  .item-row .idx{
+    font-size:11px; color:#0a0e2a; background:linear-gradient(135deg,var(--star),#ffcf6a);
+    width:22px;height:22px; border-radius:50%; display:flex;align-items:center;justify-content:center; font-weight:bold;
+  }
+  .thumb-wrap{ position:relative; width:40px; height:40px; }
+  .thumb-wrap .thumb{
+    width:40px;height:40px; border-radius:10px; object-fit:cover;
+    border:1px solid var(--panel-line-soft); background:rgba(255,255,255,0.05);
+  }
+  .thumb-wrap .thumb-btn{
+    position:absolute; right:-6px; bottom:-6px; width:20px;height:20px; border-radius:50%;
+    background:var(--purple-deep); color:#fff; font-size:10px; border:1px solid rgba(255,255,255,0.4);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;
+  }
+  .item-row .name-field{ grid-column:3; }
+  .item-row input[type=text]{ width:100%; font-size:14px; font-weight:600; }
+  .item-row .remove-btn{ grid-column:4; grid-row:1; }
+  .item-row .rate-block{
+    grid-column:1 / -1;
+    margin-top:4px; padding-top:8px;
+    border-top:1px dashed var(--panel-line-soft);
+  }
+  .rate-block-label{ font-size:10.5px; color:var(--ink-soft); font-weight:700; margin-bottom:6px; letter-spacing:.03em; }
+  .rate-line1{ display:flex; align-items:center; flex-wrap:wrap; gap:8px 10px; margin-bottom:8px; }
+  .zero-toggle{ display:flex; align-items:center; gap:5px; font-size:12px; color:var(--ink-soft); white-space:nowrap; cursor:pointer; }
+  .zero-toggle input{ width:15px;height:15px; accent-color:var(--pink-deep); flex:0 0 auto; }
+  .rate-input{ width:110px; text-align:right; }
+  .rate-arrow{ color:var(--ink-soft); font-size:13px; }
+  .rate-badge{
+    font-size:11.5px; font-weight:700; color:#fff;
+    background:linear-gradient(135deg, rgba(63,127,224,0.35), rgba(255,111,174,0.35));
+    border:1px solid var(--panel-line-soft); padding:4px 10px; border-radius:999px; white-space:nowrap; min-width:64px; text-align:center;
+  }
+  .auto-check-row{
+    display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-soft); cursor:pointer;
+    padding:6px 10px; border-radius:999px; background:rgba(255,255,255,0.03);
+    border:1px solid var(--panel-line-soft); width:fit-content; transition:all .15s;
+  }
+  .auto-check-row input{ width:15px;height:15px; accent-color:#ffcf6a; flex:0 0 auto; }
+  .auto-check-row.active{
+    background:linear-gradient(135deg, rgba(255,233,168,0.28), rgba(255,207,106,0.22));
+    border-color:rgba(255,215,120,0.65); color:#fff; font-weight:700;
+    box-shadow:0 0 10px rgba(255,215,120,0.35);
+  }
+  .item-row.zero-eligible .rate-input:disabled,
+  .rate-input:disabled, .zero-toggle input:disabled{ opacity:.45; }
+
+  /* generic inputs */
+  input[type=text], input[type=number]{
+    padding:7px 9px; border-radius:var(--radius-sm); border:1px solid var(--panel-line-soft);
+    background:rgba(255,255,255,0.06); color:var(--ink); font-size:13px; outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input[type=text]::placeholder, input[type=number]::placeholder{ color:rgba(238,240,255,0.35); }
+  input[type=text]:focus, input[type=number]:focus{
+    border-color:var(--pink-deep); box-shadow:0 0 0 3px rgba(255,111,174,0.25);
+  }
+
+  /* ---------- buttons ---------- */
+  button{ font-family:inherit; cursor:pointer; border:none; border-radius:var(--radius-sm); font-weight:700; transition:transform .1s ease, box-shadow .15s ease, background .15s ease; color:var(--ink); }
+  button:active{ transform:translateY(1px) scale(.98); }
+  .btn-primary{ background:linear-gradient(135deg,var(--blue),var(--purple)); color:#fff; padding:9px 16px; font-size:13px; box-shadow:0 3px 0 var(--purple-deep); }
+  .btn-primary:hover{ filter:brightness(1.1); }
+  .btn-soft{ background:rgba(255,255,255,0.08); color:var(--ink); padding:9px 14px; font-size:12px; }
+  .btn-soft:hover{ background:rgba(255,255,255,0.14); }
+  .btn-outline{ background:transparent; color:var(--ink); border:1.5px solid var(--panel-line); padding:8px 14px; font-size:12px; }
+  .btn-outline:hover{ background:rgba(255,255,255,0.06); }
+  .btn-danger{ background:var(--danger-bg); color:var(--danger); padding:6px 10px; font-size:11px; border:1px solid rgba(255,120,150,0.35); }
+  .btn-danger:hover{ background:rgba(255,80,120,0.22); }
+  .btn-block{ width:100%; }
+  .row-buttons{ display:flex; gap:10px; flex-wrap:wrap; }
+
+  /* ---------- draw settings ---------- */
+  .setting-line{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px dashed var(--panel-line-soft); }
+  .setting-line:last-of-type{ border-bottom:none; }
+  .setting-line .label{ font-size:13px; font-weight:700; color:var(--ink); }
+  .setting-line .label small{ display:block; font-weight:400; font-size:11px; color:var(--ink-soft); }
+  .draw-count-input{ width:70px; text-align:center; font-weight:700; }
+
+  .rate-sum-box{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 14px; margin:10px 0; border-radius:var(--radius-md);
+    background:rgba(255,255,255,0.05); border:1px solid var(--panel-line-soft); font-size:13px;
+  }
+  .rate-sum-box .val{ font-weight:800; }
+  .rate-sum-box.ok .val{ color:var(--ok); }
+  .rate-sum-box.over{ background:var(--danger-bg); border-color:rgba(255,120,150,0.4); }
+  .rate-sum-box.over .val{ color:var(--danger); }
+
+  /* ---------- draw button ---------- */
+  .round-btn-wrap{ margin:18px 0 6px; text-align:center; }
+  #drawBtn{
+    width:100%; padding:20px; font-size:20px; letter-spacing:.08em; color:#fff;
+    background:linear-gradient(120deg, var(--blue), var(--purple), var(--pink));
+    background-size:200% 200%;
+    border-radius:999px; box-shadow:var(--shadow-pop); text-shadow:0 2px 6px rgba(0,0,0,0.35);
+    animation:auroraShift 6s ease infinite;
+  }
+  @keyframes auroraShift{ 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+  #drawBtn:hover{ filter:brightness(1.08); }
+  #drawBtn:disabled{ background:rgba(255,255,255,0.08); box-shadow:none; cursor:not-allowed; animation:none; color:var(--ink-soft); }
+  @keyframes fortuneWiggle{
+    0%{transform:scale(1) rotate(0deg);}
+    30%{transform:scale(1.03) rotate(-1.5deg);}
+    60%{transform:scale(1.03) rotate(1.5deg);}
+    100%{transform:scale(1) rotate(0deg);}
+  }
+  #drawBtn.shaking{ animation:fortuneWiggle .5s ease, auroraShift 6s ease infinite; }
+
+  .error-box{ margin-top:10px; background:var(--danger-bg); border:1px solid rgba(255,120,150,0.4); color:var(--danger); font-size:12.5px; padding:10px 12px; border-radius:var(--radius-sm); display:none; }
+  .error-box.show{ display:block; }
+
+  /* ---------- result ---------- */
+  #resultArea{ margin-top:16px; min-height:80px; }
+  .result-empty{ text-align:center; color:var(--ink-soft); font-size:13px; padding:26px 0; }
+  .result-meta{ font-size:12px; color:var(--ink-soft); margin-bottom:8px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .result-meta .badge{
+    font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px;
+    background:rgba(255,255,255,0.08); border:1px solid var(--panel-line-soft); color:var(--ink);
+  }
+  .result-meta .seed{ font-family:monospace; letter-spacing:.05em; color:var(--star); }
+  .result-title{ font-size:12px; color:var(--ink-soft); font-weight:700; margin-bottom:8px; }
+  .summary-list{ display:flex; flex-direction:column; border:1px solid var(--panel-line-soft); border-radius:var(--radius-md); overflow:hidden; margin-bottom:12px; background:rgba(255,255,255,0.03); }
+  .summary-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 14px; font-size:14px; border-bottom:1px dashed var(--panel-line-soft); }
+  .summary-row:last-child{ border-bottom:none; }
+  .summary-row .s-name{ display:flex; align-items:center; gap:8px; font-weight:700; color:var(--ink); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .summary-row .s-bullet{ flex:0 0 auto; width:14px;height:14px; border-radius:50%; background:conic-gradient(var(--blue) 0deg 120deg, var(--purple) 120deg 240deg, var(--pink) 240deg 360deg); box-shadow:inset 0 0 0 2px rgba(10,10,30,0.6); }
+  .summary-row .s-count{ flex:0 0 auto; font-weight:800; color:var(--star); white-space:nowrap; }
+
+  /* ---------- history ---------- */
+  #historyList{ display:flex; flex-direction:column; gap:8px; max-height:320px; overflow-y:auto; }
+  .history-item{ background:rgba(255,255,255,0.03); border:1px solid var(--panel-line-soft); border-radius:var(--radius-sm); padding:8px 10px; font-size:12px; }
+  .history-item .time{ color:var(--ink-soft); font-size:10.5px; margin-bottom:3px; }
+  .history-item .count-header{ color:#fff; font-size:12px; font-weight:800; margin-bottom:6px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .history-item .summary-list{ margin-bottom:0; }
+  .history-item .summary-row{ padding:5px 10px; font-size:11.5px; }
+  .history-empty{ color:var(--ink-soft); font-size:12px; text-align:center; padding:14px 0; }
+
+  /* ---------- field block ---------- */
+  .field-block{ margin-bottom:14px; }
+  .field-label{ display:block; font-size:13px; font-weight:700; color:var(--ink); margin-bottom:6px; }
+  .field-label small{ display:inline-block; margin-left:6px; font-weight:400; font-size:11px; color:var(--ink-soft); }
+  #campaignTitle{ width:100%; }
+
+  .check-row{ display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:14px; color:var(--ink); }
+  .check-row input{ width:16px;height:16px; accent-color:var(--pink-deep); }
+
+  /* ---------- original icon (character image) ---------- */
+  .char-preview{ display:flex; align-items:center; gap:14px; margin-bottom:12px; }
+  .char-preview img{
+    width:76px;height:76px; object-fit:cover; border-radius:50%;
+    border:3px solid rgba(255,255,255,0.75);
+    box-shadow:0 3px 12px rgba(20,10,60,0.5), 0 0 0 2px var(--pink);
+  }
+  .char-preview .hint{ font-size:11.5px; color:var(--ink-soft); line-height:1.6; }
+
+  .crop-modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(8,6,30,0.68); z-index:1000;
+    align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(3px);
+  }
+  .crop-modal-overlay.show{ display:flex; }
+  .crop-modal{
+    background:linear-gradient(160deg, #171338, #241a4d);
+    border:1px solid var(--panel-line);
+    border-radius:var(--radius-lg); padding:22px; max-width:380px; width:100%;
+    box-shadow:0 20px 60px rgba(0,0,0,0.55); text-align:center;
+  }
+  .crop-modal h3{ margin:0 0 6px; font-size:16px; color:#fff; }
+  .crop-hint{ font-size:11.5px; color:var(--ink-soft); margin:0 0 14px; line-height:1.5; }
+  .crop-canvas-wrap{ display:flex; justify-content:center; margin-bottom:14px; }
+  #cropCanvas{ border-radius:14px; background:#1b1440; cursor:grab; touch-action:none; box-shadow:0 2px 14px rgba(0,0,0,0.4); max-width:100%; }
+  #cropCanvas:active{ cursor:grabbing; }
+  .crop-zoom-row{ display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .crop-zoom-label{ font-size:16px; }
+  .crop-zoom-row input[type=range]{ flex:1; accent-color:var(--pink-deep); }
+  .crop-modal-buttons{ justify-content:center; }
+
+  #fileInputTXT{ display:none; }
+  #fileInputImage{ display:none; }
+  #fileInputChar{ display:none; }
+
+  footer{ text-align:center; font-size:11px; color:var(--ink-soft); margin-top:24px; }
+
+  @media (max-width:480px){
+    .hero{ padding:14px 16px; }
+    .hero-text h1{ font-size:21px; }
+    #drawBtn{ font-size:17px; padding:16px; }
+    .fortune-group{ gap:8px; }
+  }
+</style>
+</head>
+<body>
+<div class="starfield"></div>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="hero-badge"></div>
+    <div class="hero-text">
+      <h1>✨ Rare <span>Flare</span></h1>
+      <p>その瞬間の運命を読み取る、幻想の排出率ガチャ — Rurupop Carnival</p>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- LEFT: fortune mode + prizes -->
+    <div class="left-col">
+      <div class="panel">
+        <h2><span class="dot"></span>Fortune Mode</h2>
+        <p class="desc">選ぶモードによって内部の抽選処理の個性が変わりますが、排出率には一切影響しません。配信で「今日はAuroraで！」なども楽しめます。</p>
+        <div class="fortune-group" id="fortuneGroup">
+          <div class="fortune-btn" data-mode="aurora"><span class="emoji">🌈</span>Aurora</div>
+          <div class="fortune-btn" data-mode="blossom"><span class="emoji">🌸</span>Blossom</div>
+          <div class="fortune-btn" data-mode="crystal"><span class="emoji">💎</span>Crystal</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2><span class="dot"></span>景品設定</h2>
+        <p class="desc">景品名・画像・排出率を設定してください。排出率は「0.」チェックや自由入力、AUTOで直感的に調整できます。</p>
+
+        <div class="bulk-row">
+          <label for="bulkCount">景品数を一括生成</label>
+          <input type="number" id="bulkCount" min="1" max="30" value="6">
+          <button class="btn-soft" id="bulkGenBtn">生成</button>
+          <span class="cap-note">※最大30件まで</span>
+        </div>
+
+        <div id="itemList"></div>
+
+        <div class="rate-sum-box" id="rateSumBox">
+          <span>排出率合計</span>
+          <span class="val" id="rateSumVal">100%</span>
+        </div>
+
+        <div class="row-buttons">
+          <button class="btn-primary" id="addItemBtn">＋ 景品追加</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2><span class="dot"></span>履歴</h2>
+        <p class="desc">これまでの抽選結果が新しい順に並びます。</p>
+        <div id="historyList"><div class="history-empty">まだ履歴はありません</div></div>
+        <div class="row-buttons" style="margin-top:12px;">
+          <button class="btn-outline" id="clearHistoryBtn">履歴をクリア</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: draw + result + settings -->
+    <div class="right-col">
+      <div class="panel">
+        <h2><span class="dot"></span>抽選設定</h2>
+
+        <div class="setting-line">
+          <div class="label">抽選回数<small>一度に何回運命を視るか（1〜999,999回）</small></div>
+          <input type="number" id="drawCount" class="draw-count-input" min="1" max="999999" value="1">
+        </div>
+
+        <div class="round-btn-wrap">
+          <button id="drawBtn">🔮 運命を視る 🔮</button>
+          <div class="error-box" id="errorBox"></div>
+        </div>
+
+        <div id="resultArea">
+          <div class="result-empty">「運命を視る」を押すと、ここに結果が表示されます</div>
+        </div>
+
+        <div class="row-buttons" id="resultActions" style="display:none; margin-top:12px;">
+          <button class="btn-outline" id="savePngBtn">結果をPNG保存</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2><span class="dot"></span>結果画像の設定</h2>
+
+        <div class="field-block">
+          <label for="campaignTitle" class="field-label">企画タイトル<small>PNG画像に表示されます（任意）</small></label>
+          <input type="text" id="campaignTitle" placeholder="例：レアフレア大抽選会" maxlength="40">
+        </div>
+
+        <div class="check-row">
+          <input type="checkbox" id="showDateCheck" checked>
+          <label for="showDateCheck">画像に日付・時刻を表示する</label>
+        </div>
+
+        <div class="char-preview">
+          <img id="charPreviewImg" src="" alt="オリジナルアイコン">
+          <div class="hint">
+            結果画像の右下に表示するオリジナルアイコンです。<br>PNG / JPEG を選んで変更できます。
+          </div>
+        </div>
+        <div class="row-buttons">
+          <button class="btn-soft" id="charUploadBtn">画像を変更</button>
+          <button class="btn-outline" id="charResetBtn">デフォルトに戻す</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2><span class="dot"></span>排出条件情報</h2>
+        <p class="desc">Fortune Mode・景品一覧・景品画像・排出率設定・「0.をつける」設定・「残りの確率をここに設定」設定を丸ごとコピー／TXT保存／読込できます。（オリジナルアイコンと抽選回数は含まれません）</p>
+        <div class="row-buttons">
+          <button class="btn-soft" id="copyConditionBtn">コピー</button>
+          <button class="btn-soft" id="saveTxtBtn">TXT保存</button>
+          <button class="btn-outline" id="loadTxtBtn">TXT読込</button>
+        </div>
+        <input type="file" id="fileInputTXT" accept=".txt,text/plain">
+
+        <div style="margin-top:14px; padding-top:14px; border-top:1px dashed var(--panel-line-soft);">
+          <p class="desc" style="margin-bottom:8px;">景品・設定などをすべて初期状態に戻します。</p>
+          <button class="btn-danger" id="resetSettingsBtn" style="padding:9px 16px; font-size:12px;">設定をリセット</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Rare Flare — Rurupop Carnival &nbsp;|&nbsp; #RareFlare #RurupopCarnival</footer>
+</div>
+
+<div id="cropModalOverlay" class="crop-modal-overlay">
+  <div class="crop-modal">
+    <h3>アイコンの位置とサイズを調整</h3>
+    <p class="crop-hint">ドラッグで位置を移動、スライダーで拡大・縮小できます。丸い枠の中がアイコンとして使われます。</p>
+    <div class="crop-canvas-wrap">
+      <canvas id="cropCanvas" width="320" height="320"></canvas>
+    </div>
+    <div class="crop-zoom-row">
+      <span class="crop-zoom-label">🔍</span>
+      <input type="range" id="cropZoom" min="100" max="320" value="100">
+    </div>
+    <div class="row-buttons crop-modal-buttons">
+      <button class="btn-outline" id="cropCancelBtn">キャンセル</button>
+      <button class="btn-primary" id="cropApplyBtn">この範囲に決定</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="renderCanvas" width="1000" height="1000" style="display:none;"></canvas>
+<input type="file" id="fileInputImage" accept="image/png, image/jpeg">
+<input type="file" id="fileInputChar" accept="image/png, image/jpeg">
+
+<script>
+(function(){
+  "use strict";
+
+  var MAX_ITEMS = 30;
+  var uidCounter = 1;
+  function uid(){ return "rf_" + (uidCounter++); }
+
+  /* ============ default state ============ */
+  function makeDefaultItems(){
+    return [
+      { id: uid(), name: "🌟 レジェンドレア", rateRaw: "5", zeroMode: true,  auto: false, imageSrc: null },
+      { id: uid(), name: "💫 スーパーレア",   rateRaw: "3",  zeroMode: false, auto: false, imageSrc: null },
+      { id: uid(), name: "🔷 レア",          rateRaw: "15", zeroMode: false, auto: false, imageSrc: null },
+      { id: uid(), name: "🔹 ノーマル",       rateRaw: "",   zeroMode: false, auto: true,  imageSrc: null }
+    ];
+  }
+
+  var state = {
+    fortuneMode: "aurora",       // "aurora" | "blossom" | "crystal"
+    items: makeDefaultItems(),
+    drawCount: 1,
+    campaignTitle: "",
+    showDate: true,
+    charImageSrc: null,          // set to DEFAULT_CHAR_SRC after init; not saved in 排出条件情報
+    isCustomChar: false
+  };
+  var lastResult = null;  // { winners:[name...], timestamp, fortuneMode, seedHex }
+  var history = [];       // [ lastResult, ... ]
+
+  /* ============ DOM refs ============ */
+  var itemListEl = document.getElementById("itemList");
+  var bulkCountEl = document.getElementById("bulkCount");
+  var bulkGenBtn = document.getElementById("bulkGenBtn");
+  var addItemBtn = document.getElementById("addItemBtn");
+  var rateSumBox = document.getElementById("rateSumBox");
+  var rateSumVal = document.getElementById("rateSumVal");
+  var fortuneGroupEl = document.getElementById("fortuneGroup");
+  var drawCountEl = document.getElementById("drawCount");
+  var drawBtn = document.getElementById("drawBtn");
+  var errorBox = document.getElementById("errorBox");
+  var resultArea = document.getElementById("resultArea");
+  var resultActions = document.getElementById("resultActions");
+  var savePngBtn = document.getElementById("savePngBtn");
+  var historyListEl = document.getElementById("historyList");
+  var clearHistoryBtn = document.getElementById("clearHistoryBtn");
+  var campaignTitleEl = document.getElementById("campaignTitle");
+  var showDateCheck = document.getElementById("showDateCheck");
+  var copyConditionBtn = document.getElementById("copyConditionBtn");
+  var saveTxtBtn = document.getElementById("saveTxtBtn");
+  var loadTxtBtn = document.getElementById("loadTxtBtn");
+  var fileInputTXT = document.getElementById("fileInputTXT");
+  var fileInputImage = document.getElementById("fileInputImage");
+  var fileInputChar = document.getElementById("fileInputChar");
+  var resetSettingsBtn = document.getElementById("resetSettingsBtn");
+  var renderCanvas = document.getElementById("renderCanvas");
+  var charPreviewImg = document.getElementById("charPreviewImg");
+  var charUploadBtn = document.getElementById("charUploadBtn");
+  var charResetBtn = document.getElementById("charResetBtn");
+  var MAX_DRAW_COUNT = 999999;
+
+  /* ============ small utils ============ */
+  function clamp(v, min, max){ return Math.min(max, Math.max(min, v)); }
+  function roundTo12(n){ return Math.round(n * 1e12) / 1e12; }
+  function fmtNum(n){ return Number(n || 0).toLocaleString("ja-JP"); }
+
+  function toHalfWidthDigits(str){
+    return String(str).replace(/[０-９．]/g, function(ch){
+      return String.fromCharCode(ch.charCodeAt(0) - 0xFEE0);
+    });
+  }
+
+  function sanitizeRateInput(raw){
+    var s = toHalfWidthDigits(raw || "");
+    s = s.replace(/[％%]/g, "");
+    return s;
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function formatDateTime(d){
+    var pad = function(n){ return n < 10 ? "0"+n : ""+n; };
+    return d.getFullYear() + "/" + pad(d.getMonth()+1) + "/" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+
+  /* ============ rate parsing (安全設計) ============ */
+  /*
+   * 排出率入力の解釈:
+   *  - 「0.」チェックON: 入力された数字を "0." に続く小数部として解釈する
+   *      15      -> 0.15%
+   *      005     -> 0.005%
+   *      000001  -> 0.000001%
+   *  - 「0.」チェックOFF: 入力された数値をそのまま %として解釈する
+   *      15      -> 15%
+   *  全角数字は自動的に半角へ変換し、「%」は自動的に削除する。
+   *  入力範囲は 0〜100、マイナス入力は不可。内部は小数点以下12桁まで保持する。
+   */
+  function parseRatePercent(item){
+    var s = sanitizeRateInput(item.rateRaw);
+    if(item.zeroMode){
+      var digits = s.replace(/[^0-9]/g, "");
+      digits = digits.slice(0, 12);
+      if(digits === "") return 0;
+      var val = Number("0." + digits);
+      return clamp(roundTo12(val), 0, 100);
+    } else {
+      s = s.replace(/[^0-9.]/g, "");
+      var firstDot = s.indexOf(".");
+      if(firstDot !== -1){
+        s = s.slice(0, firstDot+1) + s.slice(firstDot+1).replace(/\./g, "");
+      }
+      if(s === "" || s === ".") return 0;
+      var v = Number(s);
+      if(isNaN(v)) v = 0;
+      return clamp(roundTo12(v), 0, 100);
+    }
+  }
+
+  function formatPercent(n){
+    if(!isFinite(n) || n <= 0) return "0%";
+    var s = n.toFixed(12);
+    s = s.replace(/0+$/, "").replace(/\.$/, "");
+    return s + "%";
+  }
+
+  /*
+   * 排出率の計算。
+   * AUTOに指定された景品（未指定なら一番下の景品）は
+   * 100% - 他景品の排出率合計 を自動で受け取る。
+   * 他景品の合計が100%を超えている場合は over=true とする。
+   */
+  function computeRates(){
+    var items = state.items;
+    var res = { rates:{}, autoId:null, sumOthers:0, over:false };
+    if(items.length === 0) return res;
+    var explicit = items.filter(function(it){ return !!it.auto; });
+    var autoItem = explicit.length > 0 ? explicit[0] : items[items.length-1];
+    res.autoId = autoItem.id;
+    var sum = 0;
+    items.forEach(function(it){
+      if(it.id === res.autoId) return;
+      var r = parseRatePercent(it);
+      res.rates[it.id] = r;
+      sum = roundTo12(sum + r);
+    });
+    res.sumOthers = sum;
+    res.over = sum > 100 + 1e-9;
+    res.rates[res.autoId] = res.over ? 0 : roundTo12(100 - sum);
+    return res;
+  }
+
+  /* ============ item image handling ============ */
+  var activeImageItemId = null;
+  var DEFAULT_THUMB =
+    "data:image/svg+xml;utf8," + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80">' +
+      '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+      '<stop offset="0" stop-color="#3f7fe0"/><stop offset="0.5" stop-color="#6a3fd1"/>' +
+      '<stop offset="1" stop-color="#ff6fae"/></linearGradient></defs>' +
+      '<rect width="80" height="80" rx="18" fill="url(#g)"/>' +
+      '<text x="40" y="52" font-size="34" text-anchor="middle">💎</text></svg>'
+    );
+
+  function loadImageFile(file, callback){
+    if(!file) return;
+    if(!/^image\/(png|jpeg)$/.test(file.type)){
+      alert("PNG または JPEG 画像を選んでください。");
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        var SIZE = 220;
+        var c = document.createElement("canvas");
+        c.width = SIZE; c.height = SIZE;
+        var cctx = c.getContext("2d");
+        var scale = Math.max(SIZE/img.width, SIZE/img.height);
+        var iw = img.width*scale, ih = img.height*scale;
+        cctx.drawImage(img, (SIZE-iw)/2, (SIZE-ih)/2, iw, ih);
+        callback(c.toDataURL("image/png"));
+      };
+      img.onerror = function(){ alert("画像の読み込みに失敗しました。"); };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  fileInputImage.addEventListener("change", function(){
+    var file = fileInputImage.files && fileInputImage.files[0];
+    var itemId = activeImageItemId;
+    if(!file || !itemId){ fileInputImage.value=""; return; }
+    loadImageFile(file, function(dataUrl){
+      var item = state.items.find(function(it){ return it.id === itemId; });
+      if(item){
+        item.imageSrc = dataUrl;
+        renderItemList();
+      }
+    });
+    fileInputImage.value = "";
+  });
+
+  /* ============ オリジナルアイコン（結果画像の右下に表示するキャラクター画像） ============ */
+  function makeDefaultCharIcon(){
+    var SIZE = 480;
+    var c = document.createElement("canvas");
+    c.width = SIZE; c.height = SIZE;
+    var cctx = c.getContext("2d");
+    var g = cctx.createLinearGradient(0,0,SIZE,SIZE);
+    g.addColorStop(0, "#3f7fe0"); g.addColorStop(0.5, "#6a3fd1"); g.addColorStop(1, "#ff6fae");
+    cctx.fillStyle = g;
+    cctx.beginPath(); cctx.arc(SIZE/2, SIZE/2, SIZE/2, 0, Math.PI*2); cctx.fill();
+
+    cctx.save();
+    cctx.globalAlpha = 0.35;
+    cctx.strokeStyle = "#ffffff";
+    cctx.lineWidth = 6;
+    cctx.beginPath(); cctx.arc(SIZE/2, SIZE/2, SIZE/2-10, 0, Math.PI*2); cctx.stroke();
+    cctx.restore();
+
+    drawStar(cctx, SIZE*0.22, SIZE*0.24, 20, 5, "#ffffff", 0.85);
+    drawStar(cctx, SIZE*0.80, SIZE*0.20, 14, 5, "#ffe9a8", 0.85);
+    drawStar(cctx, SIZE*0.78, SIZE*0.78, 18, 5, "#ffffff", 0.75);
+
+    cctx.font = "bold " + Math.round(SIZE*0.46) + "px 'Segoe UI Emoji','Apple Color Emoji',sans-serif";
+    cctx.textAlign = "center";
+    cctx.textBaseline = "middle";
+    cctx.fillStyle = "#ffffff";
+    cctx.fillText("\uD83D\uDC8E", SIZE/2, SIZE/2 + SIZE*0.02); // 💎
+
+    return c.toDataURL("image/png");
+  }
+  var DEFAULT_CHAR_SRC = makeDefaultCharIcon();
+  state.charImageSrc = DEFAULT_CHAR_SRC;
+  charPreviewImg.src = state.charImageSrc;
+
+  charUploadBtn.addEventListener("click", function(){ fileInputChar.click(); });
+
+  fileInputChar.addEventListener("change", function(){
+    var file = fileInputChar.files && fileInputChar.files[0];
+    if(!file) return;
+    if(!/^image\/(png|jpeg)$/.test(file.type)){
+      alert("PNG または JPEG 画像を選んでください。");
+      fileInputChar.value = "";
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(e){ openCropModal(e.target.result); };
+    reader.readAsDataURL(file);
+  });
+
+  charResetBtn.addEventListener("click", function(){
+    state.charImageSrc = DEFAULT_CHAR_SRC;
+    state.isCustomChar = false;
+    charPreviewImg.src = DEFAULT_CHAR_SRC;
+  });
+
+  /* ---- crop modal (Shake&Take と同じ操作感) ---- */
+  var cropModalOverlay = document.getElementById("cropModalOverlay");
+  var cropCanvas = document.getElementById("cropCanvas");
+  var cropZoomEl = document.getElementById("cropZoom");
+  var cropApplyBtn = document.getElementById("cropApplyBtn");
+  var cropCancelBtn = document.getElementById("cropCancelBtn");
+  var cropCtx = cropCanvas.getContext("2d");
+  var CROP_SIZE = 320;
+
+  var cropState = {
+    img: null, baseScale: 1, zoom: 1, offsetX: 0, offsetY: 0,
+    dragging: false, lastX: 0, lastY: 0
+  };
+
+  function openCropModal(src){
+    var img = new Image();
+    img.onload = function(){
+      cropState.img = img;
+      cropState.baseScale = Math.max(CROP_SIZE/img.width, CROP_SIZE/img.height);
+      cropState.zoom = 1;
+      cropState.offsetX = 0;
+      cropState.offsetY = 0;
+      cropZoomEl.value = 100;
+      drawCropPreview();
+      cropModalOverlay.classList.add("show");
+    };
+    img.onerror = function(){ alert("画像の読み込みに失敗しました。別の画像でお試しください。"); };
+    img.src = src;
+  }
+
+  function closeCropModal(){
+    cropModalOverlay.classList.remove("show");
+    cropState.img = null;
+    fileInputChar.value = "";
+  }
+
+  function getCropDisplaySize(){
+    var img = cropState.img;
+    var eff = cropState.baseScale * cropState.zoom;
+    return { dw: img.width*eff, dh: img.height*eff };
+  }
+
+  function clampCropOffset(){
+    var d = getCropDisplaySize();
+    var maxX = Math.max(0, (d.dw-CROP_SIZE)/2);
+    var maxY = Math.max(0, (d.dh-CROP_SIZE)/2);
+    cropState.offsetX = Math.max(-maxX, Math.min(maxX, cropState.offsetX));
+    cropState.offsetY = Math.max(-maxY, Math.min(maxY, cropState.offsetY));
+  }
+
+  function drawCropPreview(){
+    if(!cropState.img) return;
+    clampCropOffset();
+    var d = getCropDisplaySize();
+    var dx = CROP_SIZE/2 - d.dw/2 + cropState.offsetX;
+    var dy = CROP_SIZE/2 - d.dh/2 + cropState.offsetY;
+
+    cropCtx.clearRect(0,0,CROP_SIZE,CROP_SIZE);
+    cropCtx.fillStyle = "#1b1440";
+    cropCtx.fillRect(0,0,CROP_SIZE,CROP_SIZE);
+    cropCtx.drawImage(cropState.img, dx, dy, d.dw, d.dh);
+
+    cropCtx.save();
+    cropCtx.beginPath();
+    cropCtx.rect(0,0,CROP_SIZE,CROP_SIZE);
+    cropCtx.moveTo(CROP_SIZE/2 + CROP_SIZE/2*0.94, CROP_SIZE/2);
+    cropCtx.arc(CROP_SIZE/2, CROP_SIZE/2, CROP_SIZE/2*0.94, 0, Math.PI*2, true);
+    cropCtx.closePath();
+    cropCtx.fillStyle = "rgba(10,8,30,0.55)";
+    cropCtx.fill("evenodd");
+    cropCtx.restore();
+
+    cropCtx.beginPath();
+    cropCtx.arc(CROP_SIZE/2, CROP_SIZE/2, CROP_SIZE/2*0.94, 0, Math.PI*2);
+    cropCtx.lineWidth = 3;
+    cropCtx.strokeStyle = "#ffffff";
+    cropCtx.stroke();
+  }
+
+  cropZoomEl.addEventListener("input", function(){
+    cropState.zoom = Number(cropZoomEl.value)/100;
+    drawCropPreview();
+  });
+
+  function cropPointerPos(evt){
+    var rect = cropCanvas.getBoundingClientRect();
+    var scaleX = CROP_SIZE/rect.width;
+    var scaleY = CROP_SIZE/rect.height;
+    return { x: (evt.clientX-rect.left)*scaleX, y: (evt.clientY-rect.top)*scaleY };
+  }
+  cropCanvas.addEventListener("pointerdown", function(evt){
+    if(!cropState.img) return;
+    cropState.dragging = true;
+    var p = cropPointerPos(evt);
+    cropState.lastX = p.x; cropState.lastY = p.y;
+    cropCanvas.setPointerCapture(evt.pointerId);
+  });
+  cropCanvas.addEventListener("pointermove", function(evt){
+    if(!cropState.dragging) return;
+    var p = cropPointerPos(evt);
+    cropState.offsetX += (p.x - cropState.lastX);
+    cropState.offsetY += (p.y - cropState.lastY);
+    cropState.lastX = p.x; cropState.lastY = p.y;
+    drawCropPreview();
+  });
+  function cropPointerEnd(){ cropState.dragging = false; }
+  cropCanvas.addEventListener("pointerup", cropPointerEnd);
+  cropCanvas.addEventListener("pointercancel", cropPointerEnd);
+  cropCanvas.addEventListener("pointerleave", function(){ cropState.dragging = false; });
+
+  cropCancelBtn.addEventListener("click", closeCropModal);
+
+  cropApplyBtn.addEventListener("click", function(){
+    if(!cropState.img) return;
+    var OUT = 480;
+    var ratio = OUT/CROP_SIZE;
+    var out = document.createElement("canvas");
+    out.width = OUT; out.height = OUT;
+    var octx = out.getContext("2d");
+    var d = getCropDisplaySize();
+    var dx = (CROP_SIZE/2 - d.dw/2 + cropState.offsetX)*ratio;
+    var dy = (CROP_SIZE/2 - d.dh/2 + cropState.offsetY)*ratio;
+    octx.drawImage(cropState.img, dx, dy, d.dw*ratio, d.dh*ratio);
+
+    state.charImageSrc = out.toDataURL("image/png");
+    state.isCustomChar = true;
+    charPreviewImg.src = state.charImageSrc;
+    closeCropModal();
+  });
+
+  /* ============ rendering: fortune mode ============ */
+  function renderFortuneGroup(){
+    Array.prototype.forEach.call(fortuneGroupEl.children, function(btn){
+      btn.classList.toggle("active", btn.getAttribute("data-mode") === state.fortuneMode);
+    });
+  }
+  fortuneGroupEl.addEventListener("click", function(e){
+    var btn = e.target.closest(".fortune-btn");
+    if(!btn) return;
+    state.fortuneMode = btn.getAttribute("data-mode");
+    renderFortuneGroup();
+  });
+
+  /* ============ rendering: item list ============ */
+  var rowRefs = []; // [{item, row, rateInput, zeroCheck, badge, autoBtn}]
+
+  function renderItemList(){
+    itemListEl.innerHTML = "";
+    rowRefs = [];
+
+    state.items.forEach(function(item, idx){
+      var row = document.createElement("div");
+      row.className = "item-row";
+
+      var idxEl = document.createElement("div");
+      idxEl.className = "idx";
+      idxEl.textContent = idx + 1;
+      row.appendChild(idxEl);
+
+      var thumbWrap = document.createElement("div");
+      thumbWrap.className = "thumb-wrap";
+      var thumbImg = document.createElement("img");
+      thumbImg.className = "thumb";
+      thumbImg.src = item.imageSrc || DEFAULT_THUMB;
+      thumbImg.alt = "";
+      var thumbBtn = document.createElement("button");
+      thumbBtn.className = "thumb-btn";
+      thumbBtn.type = "button";
+      thumbBtn.title = "画像を設定";
+      thumbBtn.textContent = "🖼";
+      thumbBtn.addEventListener("click", function(){
+        activeImageItemId = item.id;
+        fileInputImage.click();
+      });
+      thumbWrap.appendChild(thumbImg);
+      thumbWrap.appendChild(thumbBtn);
+      row.appendChild(thumbWrap);
+
+      var nameWrap = document.createElement("div");
+      nameWrap.className = "name-field";
+      var nameInput = document.createElement("input");
+      nameInput.type = "text";
+      nameInput.value = item.name;
+      nameInput.placeholder = "景品名";
+      nameInput.addEventListener("input", function(){
+        item.name = nameInput.value;
+      });
+      nameWrap.appendChild(nameInput);
+      row.appendChild(nameWrap);
+
+      var removeBtn = document.createElement("button");
+      removeBtn.className = "btn-danger";
+      removeBtn.type = "button";
+      removeBtn.textContent = "削除";
+      removeBtn.addEventListener("click", function(){
+        state.items = state.items.filter(function(it){ return it.id !== item.id; });
+        renderItemList();
+      });
+      row.appendChild(removeBtn);
+
+      /* ---- 排出確率ブロック: 「0.をつける」-> 自由入力 -> ▶ -> 排出率表示 / 「残りの確率をここに設定」 ---- */
+      var rateBlock = document.createElement("div");
+      rateBlock.className = "rate-block";
+
+      var rateLabel = document.createElement("div");
+      rateLabel.className = "rate-block-label";
+      rateLabel.textContent = "排出確率";
+      rateBlock.appendChild(rateLabel);
+
+      var line1 = document.createElement("div");
+      line1.className = "rate-line1";
+
+      var zeroLabel = document.createElement("label");
+      zeroLabel.className = "zero-toggle";
+      var zeroCheck = document.createElement("input");
+      zeroCheck.type = "checkbox";
+      zeroCheck.checked = !!item.zeroMode;
+      zeroCheck.addEventListener("change", function(){
+        item.zeroMode = zeroCheck.checked;
+        refreshRates();
+      });
+      var zeroSpan = document.createElement("span");
+      zeroSpan.textContent = "0.をつける";
+      zeroLabel.appendChild(zeroCheck);
+      zeroLabel.appendChild(zeroSpan);
+      line1.appendChild(zeroLabel);
+
+      var rateInput = document.createElement("input");
+      rateInput.type = "text";
+      rateInput.inputMode = "decimal";
+      rateInput.className = "rate-input";
+      rateInput.placeholder = "例: 15";
+      rateInput.value = item.rateRaw;
+      rateInput.addEventListener("input", function(){
+        item.rateRaw = sanitizeRateInput(rateInput.value);
+        if(rateInput.value !== item.rateRaw) rateInput.value = item.rateRaw;
+        refreshRates();
+      });
+      line1.appendChild(rateInput);
+
+      var arrow = document.createElement("span");
+      arrow.className = "rate-arrow";
+      arrow.textContent = "▶";
+      line1.appendChild(arrow);
+
+      var badge = document.createElement("div");
+      badge.className = "rate-badge";
+      line1.appendChild(badge);
+
+      rateBlock.appendChild(line1);
+
+      var autoLabel = document.createElement("label");
+      autoLabel.className = "auto-check-row";
+      var autoCheck = document.createElement("input");
+      autoCheck.type = "checkbox";
+      autoCheck.checked = !!item.auto;
+      autoCheck.addEventListener("change", function(){
+        if(autoCheck.checked){
+          state.items.forEach(function(it){ it.auto = false; });
+          item.auto = true;
+        } else {
+          item.auto = false;
+        }
+        refreshRates();
+      });
+      var autoSpan = document.createElement("span");
+      autoSpan.textContent = "残りの確率をここに設定";
+      autoLabel.appendChild(autoCheck);
+      autoLabel.appendChild(autoSpan);
+      autoLabel.title = "チェックすると 100% − 他景品の合計 をこの景品に自動設定します（同時に1つまで）";
+      rateBlock.appendChild(autoLabel);
+
+      row.appendChild(rateBlock);
+      itemListEl.appendChild(row);
+
+      rowRefs.push({
+        item: item, row: row, rateInput: rateInput, zeroCheck: zeroCheck,
+        badge: badge, autoCheck: autoCheck, autoLabel: autoLabel
+      });
+    });
+
+    refreshRates();
+  }
+
+  function refreshRates(){
+    var calc = computeRates();
+
+    rowRefs.forEach(function(ref){
+      var it = ref.item;
+      var isAuto = calc.autoId === it.id;
+      ref.rateInput.disabled = isAuto;
+      ref.zeroCheck.disabled = isAuto;
+      ref.row.classList.toggle("auto-row", isAuto);
+      ref.autoLabel.classList.toggle("active", isAuto);
+      ref.autoCheck.checked = !!it.auto; // 明示的にチェックされている景品のみON表示（未設定時の暗黙AUTOは枠のハイライトのみ）
+      ref.badge.textContent = formatPercent(calc.rates[it.id] || 0);
+    });
+
+    if(calc.over){
+      rateSumBox.classList.add("over");
+      rateSumBox.classList.remove("ok");
+      rateSumVal.textContent = formatPercent(calc.sumOthers) + "（100%超過）";
+    } else {
+      rateSumBox.classList.remove("over");
+      rateSumBox.classList.add("ok");
+      rateSumVal.textContent = "100%";
+    }
+
+    var hasEligible = state.items.some(function(it){
+      return it.name && it.name.trim() !== "" && (calc.rates[it.id] || 0) > 0;
+    });
+
+    if(calc.over){
+      showError("排出率の合計が100%を超えています。設定を見直してください。");
+      drawBtn.disabled = true;
+    } else if(!hasEligible){
+      hideError();
+      drawBtn.disabled = true;
+    } else {
+      hideError();
+      drawBtn.disabled = false;
+    }
+  }
+
+  addItemBtn.addEventListener("click", function(){
+    if(state.items.length >= MAX_ITEMS){
+      alert("景品は最大" + MAX_ITEMS + "件までです。");
+      return;
+    }
+    state.items.push({ id: uid(), name: "景品" + (state.items.length+1), rateRaw:"", zeroMode:false, auto:false, imageSrc:null });
+    renderItemList();
+  });
+
+  bulkGenBtn.addEventListener("click", function(){
+    var n = parseInt(bulkCountEl.value, 10);
+    if(isNaN(n) || n < 1) n = 1;
+    if(n > MAX_ITEMS) n = MAX_ITEMS;
+    bulkCountEl.value = n;
+
+    var newItems = [];
+    for(var i=0; i<n; i++){
+      if(state.items[i]){
+        newItems.push(state.items[i]);
+      } else {
+        newItems.push({ id: uid(), name: "景品"+(i+1), rateRaw:"", zeroMode:false, auto:false, imageSrc:null });
+      }
+    }
+    state.items = newItems;
+    renderItemList();
+  });
+
+  /* ============ Seed生成（Fortune Mode） ============ */
+  /*
+   * タイムスタンプ（年月日時分秒ミリ秒）と暗号乱数を組み合わせてSeedを生成する。
+   * Fortune Modeによって材料の組み合わせ方だけが変わり、当たりやすさには影響しない。
+   * 特定の時間帯が有利・不利になることを防ぐため、実際の乱数支配力は
+   * crypto.getRandomValues由来のランダム成分が握っている。
+   */
+  function secureRandomHex(numBytes){
+    var buf = new Uint8Array(numBytes);
+    if(window.crypto && window.crypto.getRandomValues){
+      window.crypto.getRandomValues(buf);
+    } else {
+      for(var i=0;i<numBytes;i++) buf[i] = Math.floor(Math.random()*256);
+    }
+    var hex = "";
+    for(var j=0;j<buf.length;j++){
+      var h = buf[j].toString(16);
+      if(h.length < 2) h = "0"+h;
+      hex += h;
+    }
+    return hex;
+  }
+
+  function xmur3(str){
+    var h = 1779033703 ^ str.length;
+    for(var i=0;i<str.length;i++){
+      h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    return function(){
+      h = Math.imul(h ^ (h >>> 16), 2246822519);
+      h = Math.imul(h ^ (h >>> 13), 3266489917);
+      h ^= h >>> 16;
+      return h >>> 0;
+    };
+  }
+
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function pad(n, l){ n = String(n); l = l || 2; while(n.length < l) n = "0"+n; return n; }
+
+  function buildSeed(mode){
+    var now = new Date();
+    var dateStr = "" + now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) +
+      pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds()) + pad(now.getMilliseconds(),3);
+    var rnd = secureRandomHex(8);
+    var mixed;
+    if(mode === "blossom"){
+      mixed = rnd + "BLOSSOM" + dateStr.split("").reverse().join("");
+    } else if(mode === "crystal"){
+      var a = dateStr, b = rnd, out = "";
+      var len = Math.max(a.length, b.length);
+      for(var i=0;i<len;i++){
+        if(i < a.length) out += a[i];
+        if(i < b.length) out += b[i];
+      }
+      mixed = out + "CRYSTAL";
+    } else {
+      mixed = dateStr + "AURORA" + rnd;
+    }
+    var seedNum = xmur3(mixed)();
+    var seedHex = (seedNum >>> 0).toString(16).toUpperCase();
+    while(seedHex.length < 8) seedHex = "0" + seedHex;
+    return { seedNum: seedNum, seedHex: seedHex };
+  }
+
+  /* ============ 抽選エンジン ============ */
+  /*
+   * Fortune Modeごとに重み付き抽選アルゴリズム自体を切り替える。
+   * 3種類とも数学的に同一の確率分布（設定した排出率）を返す実装であり、
+   * 排出率を有利・不利に操作するものではない。差はあくまで「選び方」の
+   * 内部処理であり、UI上にアルゴリズム名や特徴を表示することはない。
+   *
+   *   🌈 Aurora   : 累積確率方式（線形走査で累積和と比較）
+   *   🌸 Blossom  : Alias Method（Vose法）— O(1)で1件を選択
+   *   💎 Crystal  : 重み付きルーレット方式（累積和に対する二分探索）
+   */
+
+  // 🌈 Aurora: 累積確率方式（王道・線形走査）
+  function pickCumulative(rng, pool, total){
+    if(total <= 0) return null;
+    var r = rng() * total;
+    var acc = 0;
+    for(var i=0;i<pool.length;i++){
+      acc += pool[i].weight;
+      if(r < acc) return pool[i].item;
+    }
+    return pool[pool.length-1].item;
+  }
+
+  // 💎 Crystal: 重み付きルーレット方式（累積和配列に対する二分探索）
+  function buildPrefixSums(pool){
+    var prefix = new Array(pool.length);
+    var acc = 0;
+    for(var i=0;i<pool.length;i++){
+      acc += pool[i].weight;
+      prefix[i] = acc;
+    }
+    return prefix;
+  }
+  function pickRouletteBinary(rng, pool, prefix, total){
+    if(total <= 0) return null;
+    var r = rng() * total;
+    var lo = 0, hi = pool.length - 1;
+    while(lo < hi){
+      var mid = (lo + hi) >>> 1;
+      if(r < prefix[mid]) hi = mid; else lo = mid + 1;
+    }
+    return pool[lo].item;
+  }
+
+  // 🌸 Blossom: Alias Method（Vose法）。事前にテーブルを1回だけ構築し、以降は毎回O(1)で選択する。
+  function buildAliasTable(pool, total){
+    var n = pool.length;
+    var scaled = pool.map(function(p){ return (p.weight / total) * n; });
+    var prob = new Array(n);
+    var alias = new Array(n);
+    var small = [], large = [];
+    for(var i=0;i<n;i++){
+      if(scaled[i] < 1) small.push(i); else large.push(i);
+    }
+    while(small.length > 0 && large.length > 0){
+      var s = small.pop();
+      var l = large.pop();
+      prob[s] = scaled[s];
+      alias[s] = l;
+      scaled[l] = (scaled[l] + scaled[s]) - 1;
+      if(scaled[l] < 1) small.push(l); else large.push(l);
+    }
+    while(large.length > 0){ prob[large.pop()] = 1; }
+    while(small.length > 0){ prob[small.pop()] = 1; }
+    return { prob: prob, alias: alias, n: n };
+  }
+  function pickAlias(rng, pool, table){
+    var n = table.n;
+    var i = Math.floor(rng() * n);
+    if(i >= n) i = n - 1; // 浮動小数点誤差の保険
+    var coin = rng();
+    if(coin < table.prob[i]) return pool[i].item;
+    return pool[table.alias[i]].item;
+  }
+
+  /*
+   * Fortune Modeに応じて、上記3アルゴリズムのいずれかを使う pick関数を1つ構築する。
+   * テーブル・累積和などの事前計算はここで一度だけ行い、大量抽選時の
+   * 1件あたりのコストを最小化する。
+   */
+  function buildPicker(mode, rng, pool, total){
+    if(mode === "blossom"){
+      var table = buildAliasTable(pool, total);
+      return function(){ return pickAlias(rng, pool, table); };
+    }
+    if(mode === "crystal"){
+      var prefix = buildPrefixSums(pool);
+      return function(){ return pickRouletteBinary(rng, pool, prefix, total); };
+    }
+    // "aurora" とその他フォールバック
+    return function(){ return pickCumulative(rng, pool, total); };
+  }
+
+  var DRAW_BTN_DEFAULT_LABEL = "🔮 運命を視る 🔮";
+
+  function runDraw(){
+    hideError();
+    var n = parseInt(drawCountEl.value, 10);
+    if(isNaN(n) || n < 1) n = 1;
+    if(n > MAX_DRAW_COUNT) n = MAX_DRAW_COUNT;
+    drawCountEl.value = n;
+    state.drawCount = n;
+
+    var calc = computeRates();
+    if(calc.over){
+      showError("排出率の合計が100%を超えています。設定を見直してください。");
+      return;
+    }
+    var eligible = state.items.filter(function(it){
+      return it.name && it.name.trim() !== "" && (calc.rates[it.id] || 0) > 0;
+    });
+    if(eligible.length === 0){
+      showError("抽選対象の景品がありません。景品名と排出率を設定してください。");
+      return;
+    }
+
+    var pool = eligible.map(function(it){ return { item: it, weight: calc.rates[it.id] }; });
+    var poolTotal = pool.reduce(function(s,p){ return s + p.weight; }, 0);
+
+    /*
+     * 大量抽選時でも快適に動作するよう、抽選中は画面（DOM）を一切書き換えず、
+     * 全ての抽選が完了してから結果をまとめて一度だけ描画する。
+     * setTimeoutで一呼吸置くことで、ボタンの「視ています…」表示を
+     * 重い処理の前に確実に画面へ反映させる。
+     */
+    drawBtn.disabled = true;
+    drawBtn.textContent = "🔮 運命を視ています… 🔮";
+
+    setTimeout(function(){
+      var seed = buildSeed(state.fortuneMode);
+      var rng = mulberry32(seed.seedNum);
+      var pick = buildPicker(state.fortuneMode, rng, pool, poolTotal);
+
+      /*
+       * 999,999回規模の大量抽選でも軽快に動作するよう、当選名を1件ずつ配列へ
+       * 積み上げるのではなく、その場で件数だけを集計する（メモリ・描画コストとも
+       * 景品の種類数のみに依存し、抽選回数には依存しない）。
+       */
+      var counts = {};
+      for(var i=0;i<n;i++){
+        var name = pick().name;
+        counts[name] = (counts[name] || 0) + 1;
+      }
+      var summary = aggregateFromCounts(counts);
+
+      var now = new Date();
+      lastResult = { summary: summary, totalCount: n, timestamp: now, fortuneMode: state.fortuneMode, seedHex: seed.seedHex };
+      history.unshift(lastResult);
+      if(history.length > 50) history.pop();
+
+      drawBtn.textContent = DRAW_BTN_DEFAULT_LABEL;
+      refreshRates(); // 現在の設定に応じて disabled / エラー状態を再評価する
+
+      drawBtn.classList.add("shaking");
+      setTimeout(function(){ drawBtn.classList.remove("shaking"); }, 500);
+
+      renderResult(lastResult);
+      renderHistory();
+      resultActions.style.display = "flex";
+    }, 10);
+  }
+
+  drawBtn.addEventListener("click", runDraw);
+
+  function fortuneLabel(mode){
+    if(mode === "blossom") return "🌸 Blossom";
+    if(mode === "crystal") return "💎 Crystal";
+    return "🌈 Aurora";
+  }
+
+  /* counts: { 景品名: 当選件数 } を、景品設定の並び順に整列した配列へ変換する */
+  function aggregateFromCounts(counts){
+    var ordered = [], seen = {};
+    state.items.forEach(function(it){
+      var nm = it.name;
+      if(counts.hasOwnProperty(nm) && !seen[nm]){
+        ordered.push({ name: nm, count: counts[nm] });
+        seen[nm] = true;
+      }
+    });
+    Object.keys(counts).forEach(function(nm){
+      if(!seen[nm]){ ordered.push({ name: nm, count: counts[nm] }); seen[nm] = true; }
+    });
+    return ordered;
+  }
+
+  function buildSummaryListEl(summary){
+    var list = document.createElement("div");
+    list.className = "summary-list";
+    summary.forEach(function(row){
+      var r = document.createElement("div");
+      r.className = "summary-row";
+      r.innerHTML = '<span class="s-name"><span class="s-bullet"></span>' + escapeHtml(row.name) + '</span><span class="s-count">' + fmtNum(row.count) + '回</span>';
+      list.appendChild(r);
+    });
+    return list;
+  }
+
+  function buildMetaEl(result){
+    var meta = document.createElement("div");
+    meta.className = "result-meta";
+    var b1 = document.createElement("span"); b1.className = "badge"; b1.textContent = fortuneLabel(result.fortuneMode);
+    var b2 = document.createElement("span"); b2.className = "badge seed"; b2.textContent = "Seed: " + result.seedHex;
+    meta.appendChild(b1); meta.appendChild(b2);
+    return meta;
+  }
+
+  function renderResult(result){
+    resultArea.innerHTML = "";
+    var title = document.createElement("div");
+    title.className = "result-title";
+    title.textContent = "【" + fmtNum(result.totalCount) + "回抽選】— " + formatDateTime(result.timestamp);
+    resultArea.appendChild(title);
+    resultArea.appendChild(buildMetaEl(result));
+    resultArea.appendChild(buildSummaryListEl(result.summary));
+  }
+
+  function renderHistory(){
+    if(history.length === 0){
+      historyListEl.innerHTML = '<div class="history-empty">まだ履歴はありません</div>';
+      return;
+    }
+    historyListEl.innerHTML = "";
+    history.forEach(function(h){
+      var item = document.createElement("div");
+      item.className = "history-item";
+
+      var timeEl = document.createElement("div");
+      timeEl.className = "time";
+      timeEl.textContent = formatDateTime(h.timestamp);
+      item.appendChild(timeEl);
+
+      var headerEl = document.createElement("div");
+      headerEl.className = "count-header";
+      headerEl.innerHTML = "【" + fmtNum(h.totalCount) + "回抽選】 " +
+        '<span class="badge" style="font-size:10px;">' + escapeHtml(fortuneLabel(h.fortuneMode)) + '</span>' +
+        '<span class="badge seed" style="font-size:10px;">' + escapeHtml(h.seedHex) + '</span>';
+      item.appendChild(headerEl);
+
+      item.appendChild(buildSummaryListEl(h.summary));
+      historyListEl.appendChild(item);
+    });
+  }
+
+  clearHistoryBtn.addEventListener("click", function(){
+    history = [];
+    renderHistory();
+  });
+
+  function showError(msg){
+    errorBox.textContent = msg;
+    errorBox.classList.add("show");
+  }
+  function hideError(){
+    errorBox.classList.remove("show");
+    errorBox.textContent = "";
+  }
+
+  /* ============ 結果画像設定 ============ */
+  showDateCheck.addEventListener("change", function(){ state.showDate = showDateCheck.checked; });
+  campaignTitleEl.addEventListener("input", function(){ state.campaignTitle = campaignTitleEl.value; });
+
+  /* ============ PNG export ============ */
+  var CV_COLORS = {
+    ink:"#eef0ff", inkSoft:"#c7c6ee", star:"#ffe9a8",
+    blue:"#3f7fe0", purple:"#6a3fd1", pink:"#ff6fae"
+  };
+  var FONT_STACK = "'Hiragino Maru Gothic ProN','Yu Gothic',sans-serif";
+
+  function roundRect(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  function drawStar(ctx, cx, cy, r, points, color, alpha){
+    ctx.save();
+    ctx.globalAlpha = (typeof alpha === "number") ? alpha : 1;
+    ctx.beginPath();
+    for(var i=0;i<points*2;i++){
+      var rad = (i % 2 === 0) ? r : r*0.45;
+      var angle = -Math.PI/2 + i*Math.PI/points;
+      var x = cx + rad*Math.cos(angle);
+      var y = cy + rad*Math.sin(angle);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function truncateToWidth(ctx, text, maxWidth){
+    if(ctx.measureText(text).width <= maxWidth) return text;
+    var t = text;
+    while(t.length > 1 && ctx.measureText(t + "…").width > maxWidth){ t = t.slice(0,-1); }
+    return t.length <= 1 ? t : t + "…";
+  }
+
+  // deterministic-ish star field for the PNG (fixed positions, purely decorative)
+  var PNG_STAR_POS = (function(){
+    var arr = [];
+    var seedFn = xmur3("rareflare-static-stars")();
+    var rng = mulberry32(seedFn);
+    for(var i=0;i<70;i++){ arr.push([rng(), rng(), rng()]); }
+    return arr;
+  })();
+
+  function drawResultCanvas(result, callback){
+    var W = 1000, H = 1000;
+    renderCanvas.width = W; renderCanvas.height = H;
+    var ctx = renderCanvas.getContext("2d");
+
+    // background
+    var grad = ctx.createLinearGradient(0,0,W,H);
+    grad.addColorStop(0, "#0a0e2a");
+    grad.addColorStop(0.5, "#3a2a7a");
+    grad.addColorStop(1, "#8a3d78");
+    ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+
+    var rg = ctx.createRadialGradient(W-90,80,10,W-90,80,300);
+    rg.addColorStop(0, "rgba(255,111,174,0.35)"); rg.addColorStop(1, "rgba(255,111,174,0)");
+    ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(W-90,80,300,0,Math.PI*2); ctx.fill();
+
+    var rg2 = ctx.createRadialGradient(70,H-70,10,70,H-70,260);
+    rg2.addColorStop(0, "rgba(63,127,224,0.32)"); rg2.addColorStop(1, "rgba(63,127,224,0)");
+    ctx.fillStyle = rg2; ctx.beginPath(); ctx.arc(70,H-70,260,0,Math.PI*2); ctx.fill();
+
+    // stars scattered
+    PNG_STAR_POS.forEach(function(p){
+      var x = p[0]*W, y = p[1]*H*0.9, r = 1 + p[2]*2.2;
+      ctx.globalAlpha = 0.25 + p[2]*0.5;
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+
+    // card panel
+    var cardX=36, cardY=36, cardW=W-72, cardH=H-72;
+    roundRect(ctx, cardX, cardY, cardW, cardH, 32);
+    ctx.fillStyle = "rgba(15,12,42,0.62)";
+    ctx.fill();
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = "rgba(200,180,255,0.35)";
+    ctx.stroke();
+
+    var padL = 68, padR = W-68;
+
+    // brand row
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 26px " + FONT_STACK;
+    ctx.fillText("✨ Rare Flare", padL, 82);
+    ctx.font = "12px " + FONT_STACK;
+    ctx.fillStyle = CV_COLORS.inkSoft;
+    ctx.fillText("Rurupop Carnival", padL, 102);
+
+    if(state.showDate){
+      ctx.textAlign = "right";
+      ctx.font = "14px " + FONT_STACK;
+      ctx.fillStyle = CV_COLORS.inkSoft;
+      ctx.fillText(formatDateTime(result.timestamp), padR, 82);
+    }
+
+    var y = 126;
+    ctx.strokeStyle = "rgba(200,180,255,0.25)";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padR,y); ctx.stroke();
+    y += 30;
+
+    // campaign title banner
+    var campaignTitle = (state.campaignTitle || "").trim();
+    if(campaignTitle){
+      ctx.font = "bold 24px " + FONT_STACK;
+      var tw = ctx.measureText(campaignTitle).width;
+      var bannerW = Math.min(cardW-80, Math.max(260, tw+120));
+      var bannerH = 54;
+      var bx = W/2 - bannerW/2, by = y;
+      var bgrad = ctx.createLinearGradient(bx,0,bx+bannerW,0);
+      bgrad.addColorStop(0, CV_COLORS.blue); bgrad.addColorStop(0.5, CV_COLORS.purple); bgrad.addColorStop(1, CV_COLORS.pink);
+      roundRect(ctx, bx, by, bannerW, bannerH, bannerH/2);
+      ctx.fillStyle = bgrad; ctx.fill();
+      ctx.textAlign = "center";
+      ctx.font = "bold 21px " + FONT_STACK;
+      ctx.fillStyle = "#ffffff";
+      var displayTitle = truncateToWidth(ctx, campaignTitle, bannerW-90);
+      ctx.fillText(displayTitle, W/2, by+bannerH/2+7);
+      drawStar(ctx, bx+26, by+bannerH/2, 7, 5, "#ffffff", 0.9);
+      drawStar(ctx, bx+bannerW-26, by+bannerH/2, 7, 5, "#ffffff", 0.9);
+      y = by + bannerH + 22;
+    } else {
+      y += 4;
+    }
+
+    // fortune mode + seed
+    ctx.textAlign = "center";
+    ctx.font = "bold 14px " + FONT_STACK;
+    ctx.fillStyle = CV_COLORS.star;
+    ctx.fillText(fortuneLabel(result.fortuneMode) + "   Seed: " + result.seedHex, W/2, y+8);
+    y += 40;
+
+    // headline
+    ctx.font = "bold 44px " + FONT_STACK;
+    var headline = "運命の抽選結果";
+    ctx.fillStyle = "#ffffff";
+    var hw = ctx.measureText(headline).width;
+    ctx.fillText(headline, W/2, y+40);
+    drawStar(ctx, W/2 - hw/2 - 36, y+26, 14, 5, CV_COLORS.star, 0.95);
+    drawStar(ctx, W/2 + hw/2 + 36, y+26, 14, 5, CV_COLORS.star, 0.95);
+    y += 70;
+
+    // winners summary
+    var winnerTop = y, winnerBottom = H - 130;
+    var availH = Math.max(60, winnerBottom - winnerTop);
+    var summary = result.summary;
+    var n = summary.length;
+
+    if(n > 0){
+      var columns = n <= 15 ? 1 : 2;
+      var rows = Math.max(1, Math.ceil(n / columns));
+      var rowH = Math.max(22, Math.min(64, availH / rows));
+      var fs = Math.max(13, Math.min(28, rowH * 0.44));
+      var totalH = rows * rowH;
+      var offTop = Math.max(0, (availH - totalH) / 2);
+      var startY = winnerTop + offTop;
+      var colW = (padR - padL) / columns;
+
+      if(columns === 2){
+        ctx.strokeStyle = "rgba(200,180,255,0.25)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(padL+colW, startY); ctx.lineTo(padL+colW, startY+totalH); ctx.stroke();
+      }
+
+      summary.forEach(function(row, i){
+        var col = i % columns, rIdx = Math.floor(i / columns);
+        var colL = padL + col*colW + (columns===2 ? 20 : 0);
+        var colR = padL + (col+1)*colW - (columns===2 ? 20 : 0);
+        var yy = startY + rIdx*rowH + rowH*0.68;
+        var badgeR = Math.max(8, Math.min(15, rowH*0.28));
+
+        var cg = ctx.createLinearGradient(colL, yy-badgeR, colL+badgeR*2, yy+badgeR);
+        cg.addColorStop(0, CV_COLORS.blue); cg.addColorStop(0.5, CV_COLORS.purple); cg.addColorStop(1, CV_COLORS.pink);
+        ctx.beginPath(); ctx.arc(colL+badgeR, yy-fs*0.32, badgeR, 0, Math.PI*2); ctx.fillStyle=cg; ctx.fill();
+
+        ctx.font = "bold " + fs + "px " + FONT_STACK;
+        var countText = fmtNum(row.count) + "回";
+        var countW = ctx.measureText(countText).width;
+        var nameX = colL + badgeR*2 + 12;
+        var maxNameW = Math.max(20, (colR - countW - 16) - nameX);
+
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(truncateToWidth(ctx, row.name, maxNameW), nameX, yy);
+
+        ctx.textAlign = "right";
+        ctx.fillStyle = CV_COLORS.star;
+        ctx.fillText(countText, colR, yy);
+
+        if(rIdx < rows-1){
+          ctx.strokeStyle = "rgba(200,180,255,0.18)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(colL - (columns===2?8:14), startY+(rIdx+1)*rowH);
+          ctx.lineTo(colR + (columns===2?8:14), startY+(rIdx+1)*rowH);
+          ctx.stroke();
+        }
+      });
+    }
+
+    // footer hashtags (bottom left)
+    ctx.textAlign = "left";
+    ctx.font = "bold 17px " + FONT_STACK;
+    ctx.fillStyle = CV_COLORS.pink;
+    ctx.fillText("#RareFlare", padL, H-70);
+    ctx.fillStyle = CV_COLORS.star;
+    ctx.fillText("#RurupopCarnival", padL, H-44);
+
+    // オリジナルアイコン（bottom right）
+    var img = new Image();
+    img.onload = function(){
+      var size = 170;
+      var cx = padR - size;
+      var cy = H - 74 - size;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx+size/2, cy+size/2, size/2, 0, Math.PI*2);
+      ctx.closePath();
+      ctx.clip();
+      var ratio = Math.max(size/img.width, size/img.height);
+      var iw = img.width*ratio, ih = img.height*ratio;
+      ctx.drawImage(img, cx + (size-iw)/2, cy + (size-ih)/2, iw, ih);
+      ctx.restore();
+
+      ctx.beginPath();
+      ctx.arc(cx+size/2, cy+size/2, size/2, 0, Math.PI*2);
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx+size/2, cy+size/2, size/2+3, 0, Math.PI*2);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = CV_COLORS.star;
+      ctx.stroke();
+
+      callback(renderCanvas);
+    };
+    img.onerror = function(){ callback(renderCanvas); };
+    img.src = state.charImageSrc;
+  }
+
+  savePngBtn.addEventListener("click", function(){
+    if(!lastResult){ alert("まだ抽選結果がありません。"); return; }
+    drawResultCanvas(lastResult, function(canvas){
+      canvas.toBlob(function(blob){
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        var stamp = lastResult.timestamp;
+        var fname = "RareFlare_" + stamp.getFullYear() + pad(stamp.getMonth()+1) + pad(stamp.getDate()) + "_" + pad(stamp.getHours()) + pad(stamp.getMinutes()) + pad(stamp.getSeconds()) + ".png";
+        a.href = url; a.download = fname;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      }, "image/png");
+    });
+  });
+
+  /*
+   * ============ 排出条件情報: コピー / TXT保存 / TXT読込 ============
+   * 保存対象は以下のみ（抽選回数・企画タイトル・日付表示・オリジナルアイコンは対象外）:
+   *   Fortune Mode / 景品一覧 / 景品画像 / 排出率設定 / 「0.をつける」設定 / 「残りの確率をここに設定」設定
+   */
+  function serializeConditions(){
+    var data = {
+      type: "rare-flare-conditions",
+      version: 1,
+      fortuneMode: state.fortuneMode,
+      items: state.items.map(function(it){
+        return {
+          name: it.name,
+          rateRaw: it.rateRaw,
+          zeroMode: !!it.zeroMode,
+          auto: !!it.auto,
+          imageSrc: it.imageSrc || null
+        };
+      })
+    };
+    return JSON.stringify(data, null, 2);
+  }
+
+  function applyConditions(data){
+    if(!data || !Array.isArray(data.items)) throw new Error("invalid");
+    var srcItems = data.items.slice(0, MAX_ITEMS);
+    state.items = srcItems.map(function(it){
+      return {
+        id: uid(),
+        name: it.name || "",
+        rateRaw: typeof it.rateRaw === "string" ? it.rateRaw : String(it.rateRaw||""),
+        zeroMode: !!it.zeroMode,
+        auto: !!it.auto,
+        imageSrc: it.imageSrc || null
+      };
+    });
+    if(state.items.length === 0) state.items = makeDefaultItems();
+
+    state.fortuneMode = ["aurora","blossom","crystal"].indexOf(data.fortuneMode) !== -1 ? data.fortuneMode : "aurora";
+
+    renderFortuneGroup();
+    renderItemList();
+  }
+
+  copyConditionBtn.addEventListener("click", function(){
+    var text = serializeConditions();
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){
+        alert("排出条件情報をコピーしました。");
+      }).catch(function(){
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
+    }
+  });
+
+  function fallbackCopy(text){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand("copy"); alert("排出条件情報をコピーしました。"); }
+    catch(e){ alert("コピーに失敗しました。"); }
+    document.body.removeChild(ta);
+  }
+
+  saveTxtBtn.addEventListener("click", function(){
+    var text = serializeConditions();
+    var blob = new Blob([text], {type:"text/plain"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "rare_flare_conditions.txt";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  });
+
+  loadTxtBtn.addEventListener("click", function(){ fileInputTXT.click(); });
+
+  fileInputTXT.addEventListener("change", function(){
+    var file = fileInputTXT.files && fileInputTXT.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        var data = JSON.parse(e.target.result);
+        applyConditions(data);
+        hideError();
+        alert("排出条件情報を読み込みました。");
+      }catch(err){
+        alert("TXTファイルの読み込みに失敗しました。ファイル形式をご確認ください。");
+      }
+      fileInputTXT.value = "";
+    };
+    reader.readAsText(file);
+  });
+
+  /* ============ 設定リセット ============ */
+  resetSettingsBtn.addEventListener("click", function(){
+    var ok = window.confirm("設定をリセットしますか？\n景品一覧・排出率・Fortune Mode・企画タイトルなどがすべて初期状態に戻ります。\nこの操作は元に戻せません。");
+    if(!ok) return;
+
+    state.items = makeDefaultItems();
+    state.fortuneMode = "aurora";
+    state.drawCount = 1;
+    state.campaignTitle = "";
+    state.showDate = true;
+    state.charImageSrc = DEFAULT_CHAR_SRC;
+    state.isCustomChar = false;
+
+    drawCountEl.value = state.drawCount;
+    campaignTitleEl.value = state.campaignTitle;
+    showDateCheck.checked = state.showDate;
+    charPreviewImg.src = state.charImageSrc;
+    bulkCountEl.value = 6;
+
+    lastResult = null;
+    resultArea.innerHTML = '<div class="result-empty">「運命を視る」を押すと、ここに結果が表示されます</div>';
+    resultActions.style.display = "none";
+
+    renderFortuneGroup();
+    renderItemList();
+    hideError();
+  });
+
+  drawCountEl.addEventListener("input", function(){
+    var v = parseInt(drawCountEl.value, 10);
+    if(isNaN(v) || v < 1) v = 1;
+    if(v > MAX_DRAW_COUNT) v = MAX_DRAW_COUNT;
+    state.drawCount = v;
+  });
+  drawCountEl.addEventListener("blur", function(){
+    drawCountEl.value = state.drawCount;
+  });
+
+  /* ============ init ============ */
+  renderFortuneGroup();
+  renderItemList();
+  renderHistory();
+})();
+</script>
+</body>
+</html>
