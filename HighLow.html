@@ -316,9 +316,76 @@
     color:#AAAAAA;
     margin-top:20px;
   }
+
+  /* ---------- 自動復帰モーダル ---------- */
+  .startup-modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(60,90,95,0.45);
+    z-index:1100;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .startup-modal-overlay.show{
+    display:flex;
+  }
+  .startup-modal{
+    background:var(--container-bg);
+    border-radius:var(--radius-lg);
+    padding:26px;
+    max-width:340px;
+    width:100%;
+    box-shadow:0 20px 50px rgba(0,0,0,0.22);
+    text-align:center;
+  }
+  .startup-modal h3{
+    margin:0 0 8px;
+    font-size:17px;
+    color:var(--text-main);
+  }
+  .startup-modal-desc{
+    font-size:13.5px;
+    color:var(--text-sub);
+    margin:0 0 20px;
+    line-height:1.6;
+  }
+  .startup-modal-buttons{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .btn-startup-primary{
+    font-size:14px;
+    padding:11px 22px;
+    background:linear-gradient(to bottom, var(--btn-main-hover), var(--btn-main));
+  }
+  .btn-startup-primary:hover{ background:linear-gradient(to bottom, #7EE3AC, var(--btn-main-hover)); }
+  .btn-startup-primary:active{ background:var(--btn-main-active); }
+  .btn-startup-outline{
+    font-size:14px;
+    padding:11px 22px;
+    background:linear-gradient(to bottom, var(--btn-reset-hover), var(--btn-reset));
+  }
+  .btn-startup-outline:hover{ background:linear-gradient(to bottom, #B4C8CC, var(--btn-reset-hover)); }
+  .btn-startup-outline:active{ background:var(--btn-reset-active); }
 </style>
 </head>
 <body>
+
+<!-- ===== 自動復帰モーダル（前回の続きから遊べるようにする） ===== -->
+<div id="startupModalOverlay" class="startup-modal-overlay">
+  <div class="startup-modal">
+    <h3>前回のデータが見つかりました</h3>
+    <p class="startup-modal-desc">続きを開きますか？</p>
+    <div class="startup-modal-buttons">
+      <button class="btn-startup-outline" id="startupFreshBtn">新しく始める</button>
+      <button class="btn-startup-primary" id="startupContinueBtn">続きから始める</button>
+    </div>
+  </div>
+</div>
 
 <div class="app-container">
 
@@ -428,6 +495,9 @@ const RANK_ORDERS = {
 
 const HISTORY_STORAGE_KEY = 'ruruPopHighLow_history_v1';
 
+// ゲームの続きを復帰するための自動保存キー（履歴の保存キーとは別・独立）
+const AUTOSAVE_KEY = 'rurupopCarnival:highLow:autosave:v1';
+
 /* ---------------------------------------------------------
    ゲーム状態
    --------------------------------------------------------- */
@@ -448,6 +518,72 @@ function getSettings(){
     rankOrderKey: document.getElementById('rankOrderSelect').value,
     jokerCount: Math.max(0, Math.min(2, parseInt(document.getElementById('jokerCountInput').value, 10) || 0))
   };
+}
+
+/* ---------------------------------------------------------
+   自動保存・自動復帰（ゲームの続きから遊べるようにする）
+   ※ 設定そのものを「保存機能」として提供するものではなく、
+     ゲームを正しく再開するために必要な内部状態として保持する。
+   ※ 履歴はすでに別キーで自動保存・復元されているため、ここには含めない。
+   --------------------------------------------------------- */
+function buildAutosavePayload(){
+  const settings = getSettings();
+  return {
+    drawMode: settings.drawMode,
+    deckMode: settings.deckMode,
+    rankOrderKey: settings.rankOrderKey,
+    jokerCount: settings.jokerCount,
+    deck: deck,
+    deckTotal: deckTotal,
+    leftCard: leftCard,
+    rightCard: rightCard,
+    lastResult: lastResult
+  };
+}
+
+function autoSaveNow(){
+  try{
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(buildAutosavePayload()));
+  }catch(e){
+    // 保存できない環境でもゲーム自体は問題なく続けられるよう、静かに無視する
+  }
+}
+
+function clearAutoSave(){
+  try{ localStorage.removeItem(AUTOSAVE_KEY); }catch(e){}
+}
+
+function loadAutosaveRaw(){
+  try{
+    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){
+    return null;
+  }
+}
+
+function restoreFromAutosave(data){
+  try{
+    // ゲームを正しく続けるために必要な設定をUIへ反映する
+    const drawModeInput = document.querySelector(`input[name="drawMode"][value="${data.drawMode}"]`);
+    const deckModeInput = document.querySelector(`input[name="deckMode"][value="${data.deckMode}"]`);
+    if(drawModeInput) drawModeInput.checked = true;
+    if(deckModeInput) deckModeInput.checked = true;
+    if(data.rankOrderKey) document.getElementById('rankOrderSelect').value = data.rankOrderKey;
+    if(typeof data.jokerCount === 'number') document.getElementById('jokerCountInput').value = data.jokerCount;
+
+    // ゲーム内部状態を復元
+    deck = Array.isArray(data.deck) ? data.deck : [];
+    deckTotal = typeof data.deckTotal === 'number' ? data.deckTotal : (52 + (data.jokerCount || 0));
+    leftCard = data.leftCard || null;
+    rightCard = data.rightCard || null;
+    lastResult = data.lastResult || null;
+
+    render();
+  }catch(e){
+    console.error('自動保存データの復元に失敗しました。初期状態から始めます。', e);
+    resetGame();
+  }
 }
 
 /* ---------------------------------------------------------
@@ -517,7 +653,7 @@ function compareCards(left, right, settings){
    ゲームのリセット（デッキ再構築・カード/結果クリア）
    履歴はクリアしない
    --------------------------------------------------------- */
-function resetGame(){
+function resetGame(persist = true){
   const settings = getSettings();
   deck = buildFreshDeck(settings.jokerCount);
   deckTotal = 52 + settings.jokerCount;
@@ -525,6 +661,7 @@ function resetGame(){
   rightCard = null;
   lastResult = null;
   render();
+  if(persist) autoSaveNow();
 }
 
 /* ---------------------------------------------------------
@@ -547,6 +684,7 @@ function drawCard(){
       rightCard = null;
       lastResult = null;
       render();
+      autoSaveNow();
       return;
     } else {
       // 2枚ずつモード：判定済みなので、このクリックでは一旦場を空にするだけ。
@@ -555,6 +693,7 @@ function drawCard(){
       rightCard = null;
       lastResult = null;
       render();
+      autoSaveNow();
       return;
     }
   } else if(lastResult === 'PASS'){
@@ -570,7 +709,7 @@ function drawCard(){
   /* --- ステップ2：基準カード（左）が無ければ確立する --- */
   if(leftCard === null){
     const card = pickCard(settings);
-    if(card === null){ render(); return; } // デッキ切れ
+    if(card === null){ render(); autoSaveNow(); return; } // デッキ切れ
 
     if(card.isJoker){
       // 基準カードの抽選中にジョーカーが出た場合も、きちんと画面に表示してPASSにする
@@ -580,6 +719,7 @@ function drawCard(){
       lastResult = 'PASS';
       addHistory(`🃏（PASS）`);
       render();
+      autoSaveNow();
       return;
     }
 
@@ -588,17 +728,20 @@ function drawCard(){
     lastResult = null;
     addHistory(`基準カード：${cardLabel(leftCard)}`);
     render();
+    autoSaveNow();
     return;
   }
 
   /* --- ステップ3：比較カード（右）を引く --- */
   if(settings.deckMode === 'noReplace' && deck.length === 0){
     render();
+    autoSaveNow();
     return;
   }
   const card = pickCard(settings);
   if(card === null){
     render();
+    autoSaveNow();
     return;
   }
 
@@ -614,6 +757,7 @@ function drawCard(){
   }
 
   render();
+  autoSaveNow();
 }
 
 /* ---------------------------------------------------------
@@ -793,7 +937,30 @@ document.getElementById('jokerCountInput').addEventListener('change', resetGame)
 function init(){
   loadHistory();
   renderHistory();
-  resetGame();
+
+  const saved = loadAutosaveRaw();
+  if(saved){
+    // 保存データがあるときだけ「続きから/新しく」の確認モーダルを出す
+    const overlay = document.getElementById('startupModalOverlay');
+    const continueBtn = document.getElementById('startupContinueBtn');
+    const freshBtn = document.getElementById('startupFreshBtn');
+
+    overlay.classList.add('show');
+
+    continueBtn.addEventListener('click', () => {
+      restoreFromAutosave(saved);
+      overlay.classList.remove('show');
+    }, { once:true });
+
+    freshBtn.addEventListener('click', () => {
+      clearAutoSave();
+      overlay.classList.remove('show');
+      resetGame(false); // 削除した直後に再度自動保存を作らない
+    }, { once:true });
+  } else {
+    // 保存データがなければ、通常どおり初期状態から始める（この時点ではまだ保存しない）
+    resetGame(false);
+  }
 }
 init();
 
