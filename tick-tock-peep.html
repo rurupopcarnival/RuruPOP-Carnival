@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#defcff" />
+  <title>Tick-Tock Peep! | Rurupop Carnival</title>
+  <!-- Final build: audio signal starts immediately at 0:03; Web Audio schedules remaining beats at exact 1.000s intervals. -->
+  <style>
+    :root{
+      --bg:#defcff;
+      --card:#ffffff;
+      --ink:#3f4b5b;
+      --muted:#7c8999;
+      --line:#dcecf4;
+      --accent:#ffdef6;
+      --accent-strong:#f6b9df;
+      --shadow:0 12px 28px rgba(87,123,145,.12);
+      --radius:26px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
+    body{
+      min-height:100vh;
+      background:var(--bg);
+      color:var(--ink);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
+      line-height:1.5;
+    }
+
+    button,input{font:inherit}
+    button{touch-action:manipulation}
+
+    .wrap{
+      width:min(760px, calc(100% - 24px));
+      margin:0 auto;
+      padding:18px 0 34px;
+    }
+
+    .clock-card,
+    .settings-card,
+    .footer-card{
+      background:var(--card);
+      border:1px solid rgba(255,255,255,.92);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+
+    .mini-title{
+      display:flex;
+      align-items:baseline;
+      justify-content:center;
+      gap:6px;
+      margin:0 0 8px;
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .mini-title-name{
+      font-size:14px;
+      letter-spacing:.02em;
+    }
+
+    .mini-brand{
+      color:var(--muted);
+      font-size:10px;
+      font-weight:800;
+      letter-spacing:.05em;
+    }
+
+    .clock-card{
+      position:relative;
+      padding:24px 18px 20px;
+      text-align:center;
+    }
+
+    .wake-toggle{
+      position:absolute;
+      top:14px;
+      right:14px;
+      width:40px;
+      height:40px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border:0;
+      border-radius:50%;
+      background:#eef3f6;
+      font-size:20px;
+      line-height:1;
+      cursor:pointer;
+      filter:grayscale(1) opacity(.6);
+      transition:filter .2s ease, background-color .2s ease, box-shadow .2s ease;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    .wake-toggle:active{transform:translateY(1px)}
+
+    .wake-toggle.on{
+      filter:none;
+      background:#fff3c4;
+      box-shadow:0 0 0 3px rgba(255,196,42,.28), 0 0 12px rgba(255,196,42,.55);
+    }
+
+    .eyebrow{
+      margin:0 0 8px;
+      font-size:clamp(15px,3.7vw,19px);
+      font-weight:800;
+      letter-spacing:.03em;
+    }
+
+    .countdown{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:.02em;
+      font-variant-numeric:tabular-nums;
+      font-weight:900;
+      font-size:clamp(78px,22vw,146px);
+      letter-spacing:-.055em;
+      line-height:.95;
+      white-space:nowrap;
+      margin:4px 0 12px;
+    }
+
+    .colon{
+      display:inline-block;
+      width:.38em;
+      text-align:center;
+      transform:translateY(-.02em);
+      opacity:1;
+      transition:opacity .12s linear;
+    }
+
+    .colon.dim{opacity:.22}
+
+    .status-space{
+      min-height:34px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      margin-top:2px;
+    }
+
+    .status{
+      margin:0;
+      font-size:clamp(17px,4.5vw,22px);
+      font-weight:800;
+      letter-spacing:.04em;
+      color:#d36da9;
+      opacity:0;
+      pointer-events:none;
+    }
+
+    .status.show{
+      opacity:1;
+      animation:breathe 1.35s ease-in-out infinite;
+    }
+
+    @keyframes breathe{
+      0%,100%{opacity:1;transform:translateY(0)}
+      50%{opacity:.24;transform:translateY(1px)}
+    }
+
+    .times{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .time-box{
+      background:#f8fcfe;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:12px 10px;
+    }
+
+    .time-label{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      margin-bottom:2px;
+    }
+
+    .time-value{
+      display:block;
+      font-size:clamp(16px,4.3vw,21px);
+      font-weight:850;
+      font-variant-numeric:tabular-nums;
+      letter-spacing:.02em;
+    }
+
+    .settings-card{
+      margin-top:16px;
+      padding:18px;
+    }
+
+    .settings-title{
+      margin:0 0 14px;
+      font-size:18px;
+      font-weight:900;
+    }
+
+    .settings-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+    }
+
+    .field{
+      background:#fbfdff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:12px;
+    }
+
+    .field label{
+      display:block;
+      font-size:13px;
+      font-weight:800;
+      margin-bottom:8px;
+    }
+
+    .inline{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .number-input{
+      width:92px;
+      min-width:0;
+      border:1px solid #cfe1e9;
+      background:#fff;
+      color:var(--ink);
+      border-radius:13px;
+      padding:9px 10px;
+      font-weight:800;
+      text-align:center;
+      outline:none;
+    }
+
+    .number-input:focus{
+      border-color:#a9d9ea;
+      box-shadow:0 0 0 3px rgba(169,217,234,.22);
+    }
+
+    .unit,.hint{
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .field.full{grid-column:1/-1}
+
+    .switch-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+    }
+
+    .tempo-row{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-wrap:wrap;
+      row-gap:8px;
+      gap:10px;
+      margin-top:10px;
+      padding-top:10px;
+      border-top:1px dashed var(--line);
+    }
+
+    .magic-row{
+      margin-top:10px;
+      padding-top:10px;
+      border-top:1px dashed var(--line);
+    }
+
+    .tempo-label{
+      color:var(--muted);
+      font-size:13px;
+      font-weight:800;
+      margin-right:2px;
+    }
+
+    .tempo-btn{
+      width:40px;
+      height:40px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid var(--line);
+      border-radius:50%;
+      background:#fbfdff;
+      font-size:19px;
+      line-height:1;
+      cursor:pointer;
+      filter:grayscale(1) opacity(.5);
+      transition:filter .15s ease, background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    .tempo-btn:active{transform:translateY(1px)}
+
+    .tempo-btn.selected{
+      filter:none;
+      background:#eaf6ff;
+      border-color:#a9d9ea;
+      box-shadow:0 0 0 3px rgba(169,217,234,.32);
+    }
+
+    .switch{
+      position:relative;
+      width:56px;
+      height:32px;
+      flex:0 0 auto;
+    }
+
+    .switch input{
+      position:absolute;
+      inset:0;
+      opacity:0;
+      width:100%;
+      height:100%;
+      cursor:pointer;
+    }
+
+    .slider{
+      position:absolute;
+      inset:0;
+      border-radius:999px;
+      background:#d7e2e8;
+      transition:.18s ease;
+      pointer-events:none;
+    }
+
+    .slider::before{
+      content:"";
+      position:absolute;
+      width:24px;
+      height:24px;
+      left:4px;
+      top:4px;
+      border-radius:50%;
+      background:#fff;
+      box-shadow:0 2px 7px rgba(80,100,120,.18);
+      transition:.18s ease;
+    }
+
+    .switch input:checked + .slider{
+      background:var(--accent-strong);
+    }
+
+    .switch input:checked + .slider::before{
+      transform:translateX(24px);
+    }
+
+    .range-row{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-top:10px;
+    }
+
+    input[type="range"]{
+      width:100%;
+      accent-color:#e697c8;
+    }
+
+    .volume-value{
+      width:42px;
+      text-align:right;
+      font-variant-numeric:tabular-nums;
+      font-weight:800;
+    }
+
+    .button-row{
+      display:flex;
+      gap:10px;
+      margin-top:14px;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      appearance:none;
+      border:0;
+      border-radius:14px;
+      padding:10px 14px;
+      font-weight:850;
+      cursor:pointer;
+      background:#edf7fb;
+      color:var(--ink);
+    }
+
+    .btn:active{transform:translateY(1px)}
+    .btn.pink{background:var(--accent)}
+
+    .note{
+      margin:12px 2px 0;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .footer-card{
+      margin-top:16px;
+      padding:18px;
+      text-align:center;
+    }
+
+    .bird{
+      font-size:27px;
+      line-height:1;
+      margin-bottom:5px;
+    }
+
+    .tool-title{
+      margin:0;
+      font-size:24px;
+      font-weight:950;
+      letter-spacing:.02em;
+    }
+
+    .brand{
+      margin-top:3px;
+      color:var(--muted);
+      font-size:13px;
+      font-weight:800;
+      letter-spacing:.08em;
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:18px;
+      transform:translate(-50%,16px);
+      background:rgba(63,75,91,.94);
+      color:#fff;
+      padding:9px 13px;
+      border-radius:999px;
+      font-size:13px;
+      font-weight:800;
+      opacity:0;
+      pointer-events:none;
+      transition:.2s ease;
+      z-index:50;
+      white-space:nowrap;
+    }
+
+    .toast.show{
+      opacity:1;
+      transform:translate(-50%,0);
+    }
+
+    @media (max-width:560px){
+      .wrap{width:min(100% - 16px,760px);padding-top:8px}
+      .clock-card{padding:18px 10px 16px;border-radius:22px}
+      .wake-toggle{top:10px;right:10px}
+      .settings-card,.footer-card{border-radius:22px}
+      .settings-grid{grid-template-columns:1fr}
+      .field.full{grid-column:auto}
+      .times{gap:8px}
+      .time-box{padding:10px 6px}
+      .settings-card{padding:14px}
+    }
+
+    @media (prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="mini-title">
+      <span aria-hidden="true">🐤</span>
+      <span class="mini-title-name">Tick-Tock Peep!</span>
+      <span class="mini-brand">Rurupop Carnival</span>
+    </header>
+    <section class="clock-card" aria-labelledby="countLabel">
+      <button type="button" class="wake-toggle" id="wakeToggle" aria-pressed="false" aria-label="画面を消さない" title="画面を消さない">
+        <span aria-hidden="true">💡</span>
+      </button>
+      <p class="eyebrow" id="countLabel">次のタイミングまであと</p>
+
+      <div class="countdown" aria-live="off" aria-label="次のタイミングまで">
+        <span id="countMin">2</span><span class="colon" id="colon">:</span><span id="countSec">59</span>
+      </div>
+
+      <div class="status-space">
+        <p class="status" id="status">集計中・・・</p>
+      </div>
+
+      <div class="times">
+        <div class="time-box">
+          <span class="time-label">現在時刻</span>
+          <span class="time-value" id="nowTime">--:--:--</span>
+        </div>
+        <div class="time-box">
+          <span class="time-label">次回時刻</span>
+          <span class="time-value" id="nextTime">--:--:--</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="settings-card">
+      <h2 class="settings-title">設定</h2>
+
+      <div class="settings-grid">
+        <div class="field">
+          <label for="cycleMinutes">周期</label>
+          <div class="inline">
+            <input id="cycleMinutes" class="number-input" type="number" min="1" max="60" step="1" inputmode="numeric" />
+            <span class="unit">分</span>
+          </div>
+          <div class="hint">1〜60分</div>
+        </div>
+
+        <div class="field">
+          <label for="baseMinute">基準</label>
+          <div class="inline">
+            <span class="unit">毎時</span>
+            <input id="baseMinute" class="number-input" type="number" min="0" max="59" step="1" inputmode="numeric" />
+            <span class="unit">分</span>
+          </div>
+          <div class="hint">0〜59分</div>
+        </div>
+
+        <div class="field">
+          <label for="aggregateSeconds">「集計中・・・」表示</label>
+          <div class="inline">
+            <input id="aggregateSeconds" class="number-input" type="number" min="0" max="180" step="1" inputmode="numeric" />
+            <span class="unit">秒</span>
+          </div>
+          <div class="hint" id="aggregateHint">0〜周期いっぱいまで</div>
+        </div>
+
+        <div class="field">
+          <div class="switch-row">
+            <div>
+              <label for="soundToggle" style="margin:0">時報</label>
+              <div class="hint">ピッ・ピッ・ピッ・ピー♪</div>
+            </div>
+            <label class="switch" aria-label="時報のオンオフ">
+              <input id="soundToggle" type="checkbox" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="tempo-row" role="group" aria-label="時報のタイミング補正" id="tempoRow">
+            <span class="tempo-label">タイミング</span>
+            <button type="button" class="tempo-btn" id="tempoHorse" data-tempo="horse" aria-pressed="false" aria-label="時報をかなり早める">🐎</button>
+            <button type="button" class="tempo-btn" id="tempoFast" data-tempo="fast" aria-pressed="false" aria-label="時報を早める">🐇</button>
+            <button type="button" class="tempo-btn" id="tempoNormal" data-tempo="normal" aria-pressed="true" aria-label="時報を標準にする">🐈</button>
+            <button type="button" class="tempo-btn" id="tempoSlow" data-tempo="slow" aria-pressed="false" aria-label="時報を遅らせる">🐢</button>
+          </div>
+          <div class="switch-row magic-row">
+            <label for="magicToggle" style="margin:0;flex:1;min-width:0">Pippidi-Poppidi-Puff 🪄💫✨</label>
+            <label class="switch" aria-label="追加補正のオンオフ">
+              <input id="magicToggle" type="checkbox" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field full">
+          <label for="volume">音量</label>
+          <div class="range-row">
+            <span aria-hidden="true">🔈</span>
+            <input id="volume" type="range" min="0" max="100" step="1" />
+            <span aria-hidden="true">🔊</span>
+            <span class="volume-value" id="volumeValue">50</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button class="btn" id="resetSettings" type="button">初期設定に戻す</button>
+      </div>
+
+      <p class="note">
+        この時計は端末の時刻を基準に動きます。表示時刻・時報は目安としてお使いください。
+      </p>
+    </section>
+
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const STORAGE_KEY = 'rurupopCarnival:tickTockPeep:settings:v1';
+      const WAKE_STORAGE_KEY = 'rurupopCarnival:tickTockPeep:wakeEnabled:v1';
+      const DEFAULTS = {
+        cycleMinutes: 3,
+        baseMinute: 0,
+        aggregateSeconds: 10,
+        soundEnabled: false,
+        volume: 50,
+        chimeTempo: 'normal', // 'horse'(🐎) | 'fast'(🐇) | 'normal'(🐈) | 'slow'(🐢)
+        magicEnabled: false // 🪄：選択中プリセットへの追加補正(+MAGIC_OFFSET_SECONDS)のON/OFF
+      };
+
+      const el = {
+        countMin: document.getElementById('countMin'),
+        countSec: document.getElementById('countSec'),
+        colon: document.getElementById('colon'),
+        status: document.getElementById('status'),
+        nowTime: document.getElementById('nowTime'),
+        nextTime: document.getElementById('nextTime'),
+        cycleMinutes: document.getElementById('cycleMinutes'),
+        baseMinute: document.getElementById('baseMinute'),
+        aggregateSeconds: document.getElementById('aggregateSeconds'),
+        aggregateHint: document.getElementById('aggregateHint'),
+        soundToggle: document.getElementById('soundToggle'),
+        volume: document.getElementById('volume'),
+        volumeValue: document.getElementById('volumeValue'),
+        resetSettings: document.getElementById('resetSettings'),
+        toast: document.getElementById('toast'),
+        wakeToggle: document.getElementById('wakeToggle'),
+        tempoButtons: Array.from(document.querySelectorAll('.tempo-btn[data-tempo]')),
+        magicToggle: document.getElementById('magicToggle')
+      };
+
+      let settings = loadSettings();
+      let audioCtx = null;
+      let lastRenderedCountdown = null;
+      let scheduledSignalBoundary = null;
+      let scheduledSignalNodes = [];
+      let lastSecondStamp = -1;
+      let toastTimer = null;
+
+      function clampInt(value, min, max, fallback) {
+        const n = Number.parseInt(value, 10);
+        if (!Number.isFinite(n)) return fallback;
+        return Math.min(max, Math.max(min, n));
+      }
+
+      // 時報の「タイミング」プリセット。🐈(normal)が現在の完成タイミングの基準。
+      // syncOffset の値が大きいほど、時報4音全体を前倒しする。
+      // beatInterval や各音の長さ・間隔はどのプリセットでも共通・不変。
+      // 🐎🐇🐈🐢の4段階で固定し、プリセット自体は増やさない方針。
+      // これ以上の細かい調整は、選択中プリセットに独立して乗る🪄の
+      // 追加補正（MAGIC_OFFSET_SECONDS）で対応する。
+      const VALID_TEMPOS = ['horse', 'fast', 'normal', 'slow'];
+      const TEMPO_SYNC_OFFSET_SECONDS = { horse: 0.8, fast: 0.4, normal: 0.0425, slow: 0 };
+
+      // 🪄：🐎🐇🐈🐢のどれを選んでいても、独立してON/OFFできる追加補正。
+      // 選択中プリセットのsyncOffsetに、この値を単純加算するだけ。
+      // 補正量を変える場合は、この定数だけを書き換えればよい。
+      const MAGIC_OFFSET_SECONDS = 0.2;
+
+      function normalizedSettings(source) {
+        const cycle = clampInt(source.cycleMinutes, 1, 60, DEFAULTS.cycleMinutes);
+        const maxAggregate = cycle * 60;
+        return {
+          cycleMinutes: cycle,
+          baseMinute: clampInt(source.baseMinute, 0, 59, DEFAULTS.baseMinute),
+          aggregateSeconds: clampInt(source.aggregateSeconds, 0, maxAggregate, Math.min(DEFAULTS.aggregateSeconds, maxAggregate)),
+          soundEnabled: Boolean(source.soundEnabled),
+          volume: clampInt(source.volume, 0, 100, DEFAULTS.volume),
+          // 旧バージョン（🐇🐈🐢の3段階）の保存データが残っていても、
+          // 'fast'/'normal'/'slow' は現行の VALID_TEMPOS にそのまま含まれるため、
+          // 例外にはならず安全に読み込める（値の意味は新しいプリセットに従う）。
+          chimeTempo: VALID_TEMPOS.includes(source.chimeTempo) ? source.chimeTempo : DEFAULTS.chimeTempo,
+          // 🪄が存在しない旧保存データでは Boolean(undefined) === false となり、
+          // 安全にOFFとして扱われる。
+          magicEnabled: Boolean(source.magicEnabled)
+        };
+      }
+
+      function loadSettings() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return {...DEFAULTS};
+          return normalizedSettings({...DEFAULTS, ...JSON.parse(raw)});
+        } catch {
+          return {...DEFAULTS};
+        }
+      }
+
+      function saveSettings() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+        } catch {}
+      }
+
+      function applySettingsToUI() {
+        settings = normalizedSettings(settings);
+        el.cycleMinutes.value = settings.cycleMinutes;
+        el.baseMinute.value = settings.baseMinute;
+        el.aggregateSeconds.value = settings.aggregateSeconds;
+        el.aggregateSeconds.max = settings.cycleMinutes * 60;
+        el.aggregateHint.textContent = `0〜${settings.cycleMinutes * 60}秒（周期いっぱい）`;
+        el.soundToggle.checked = settings.soundEnabled;
+        el.volume.value = settings.volume;
+        el.volumeValue.textContent = settings.volume;
+        el.tempoButtons.forEach(btn => {
+          const isSelected = btn.dataset.tempo === settings.chimeTempo;
+          btn.classList.toggle('selected', isSelected);
+          btn.setAttribute('aria-pressed', String(isSelected));
+        });
+        el.magicToggle.checked = settings.magicEnabled;
+      }
+
+      function readSettingsFromUI() {
+        cancelScheduledSignal();
+        const cycle = clampInt(el.cycleMinutes.value, 1, 60, settings.cycleMinutes);
+        const maxAggregate = cycle * 60;
+        settings = normalizedSettings({
+          cycleMinutes: cycle,
+          baseMinute: clampInt(el.baseMinute.value, 0, 59, settings.baseMinute),
+          aggregateSeconds: clampInt(el.aggregateSeconds.value, 0, maxAggregate, settings.aggregateSeconds),
+          soundEnabled: el.soundToggle.checked,
+          volume: clampInt(el.volume.value, 0, 100, settings.volume),
+          chimeTempo: settings.chimeTempo,
+          magicEnabled: settings.magicEnabled
+        });
+        applySettingsToUI();
+        saveSettings();
+        lastRenderedCountdown = null;
+        updateClock(true);
+      }
+
+      function formatClock(date) {
+        return [
+          String(date.getHours()).padStart(2, '0'),
+          String(date.getMinutes()).padStart(2, '0'),
+          String(date.getSeconds()).padStart(2, '0')
+        ].join(':');
+      }
+
+      function getSchedule(now) {
+        const cycleMs = settings.cycleMinutes * 60 * 1000;
+
+        // "毎時○分" is the anchor for each hour. Intervals repeat from that
+        // anchor only until the following hour's anchor, then restart there.
+        // This keeps unusual cycles such as 25 minutes intuitive:
+        // 00 → 25 → 50 → (next hour) 00.
+        const currentAnchor = new Date(now);
+        currentAnchor.setMinutes(settings.baseMinute, 0, 0);
+
+        if (now < currentAnchor) {
+          currentAnchor.setTime(currentAnchor.getTime() - 60 * 60 * 1000);
+        }
+
+        const anchors = [
+          new Date(currentAnchor.getTime() - 60 * 60 * 1000),
+          currentAnchor,
+          new Date(currentAnchor.getTime() + 60 * 60 * 1000)
+        ];
+
+        const boundaries = [];
+        for (const anchor of anchors) {
+          const nextHourAnchor = anchor.getTime() + 60 * 60 * 1000;
+          for (let t = anchor.getTime(); t < nextHourAnchor; t += cycleMs) {
+            boundaries.push(new Date(t));
+          }
+        }
+
+        boundaries.sort((a, b) => a - b);
+        let previousBoundary = boundaries[0];
+        let nextBoundary = boundaries[boundaries.length - 1];
+
+        for (const t of boundaries) {
+          if (t <= now) previousBoundary = t;
+          if (t > now) {
+            nextBoundary = t;
+            break;
+          }
+        }
+
+        return { previousBoundary, nextBoundary, cycleMs };
+      }
+
+      function updateClock(force = false) {
+        const now = new Date();
+        const secondStamp = Math.floor(now.getTime() / 1000);
+
+        if (!force && secondStamp === lastSecondStamp) {
+          // Colon still follows real milliseconds for a smooth clock-like blink.
+          el.colon.classList.toggle('dim', now.getMilliseconds() >= 500);
+          return;
+        }
+        lastSecondStamp = secondStamp;
+
+        const { previousBoundary, nextBoundary, cycleMs } = getSchedule(now);
+
+        // Countdown uses whole displayed seconds and intentionally shows 0:00
+        // during the exact boundary second.
+        const msToNext = nextBoundary.getTime() - now.getTime();
+
+        // 表示は「現在の秒」を基準に整数秒で計算する。
+        // これで 0:03 → 0:02 → 0:01 → 0:00 がそれぞれきっちり1秒ずつになる。
+        const nowSecond = Math.floor(now.getTime() / 1000);
+        const nextSecond = Math.floor(nextBoundary.getTime() / 1000);
+        let displaySeconds = Math.max(0, nextSecond - nowSecond);
+
+        // 境界の1秒間は0:00を表示。
+        const sincePrevMs = now.getTime() - previousBoundary.getTime();
+        const isBoundarySecond = sincePrevMs >= 0 && sincePrevMs < 1000;
+        if (isBoundarySecond) displaySeconds = 0;
+
+        const mins = Math.floor(displaySeconds / 60);
+        const secs = displaySeconds % 60;
+
+        const renderedCountdown = `${mins}:${String(secs).padStart(2, '0')}`;
+        const countdownChanged = renderedCountdown !== lastRenderedCountdown;
+
+        el.countMin.textContent = String(mins);
+        el.countSec.textContent = String(secs).padStart(2, '0');
+        lastRenderedCountdown = renderedCountdown;
+
+        el.nowTime.textContent = formatClock(now);
+        el.nextTime.textContent = formatClock(isBoundarySecond ? previousBoundary : nextBoundary);
+
+        // Keep 0:00 for the boundary second. "集計中・・・" begins from the next second.
+        const aggregateMs = settings.aggregateSeconds * 1000;
+        const inAggregate =
+          settings.aggregateSeconds > 0 &&
+          sincePrevMs >= 1000 &&
+          sincePrevMs < aggregateMs;
+
+        el.status.classList.toggle('show', inAggregate);
+
+        // Clock colon blinks every half-second.
+        el.colon.classList.toggle('dim', now.getMilliseconds() >= 500);
+
+        maybePlayTimeSignal(now, previousBoundary, nextBoundary, displaySeconds, isBoundarySecond, countdownChanged);
+      }
+
+      function boundaryKey(date) {
+        return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${date.getHours()}-${date.getMinutes()}-${date.getSeconds()}`;
+      }
+
+      function maybePlayTimeSignal(now, previousBoundary, nextBoundary, displaySeconds, isBoundarySecond, countdownChanged) {
+        if (!settings.soundEnabled) return;
+
+        const boundaryId = boundaryKey(nextBoundary);
+        if (scheduledSignalBoundary === boundaryId) return;
+
+        const ctx = ensureAudioContext();
+        if (!ctx || settings.volume <= 0) return;
+
+        const msUntilBoundary = nextBoundary.getTime() - now.getTime();
+
+        // 次の境界を基準に、十分前から4音を予約する。
+        if (msUntilBoundary > 3200 && msUntilBoundary <= 10000) {
+          cancelScheduledSignal();
+          scheduledSignalBoundary = boundaryId;
+
+          const boundaryAudioTime = ctx.currentTime + (msUntilBoundary / 1000);
+          const beatInterval = 1.010; // 音の拍間隔を10msだけ広げる。全プリセット共通。
+          // 🐈(normal)は現在の完成済み syncOffset(0.0425)をそのまま使用。
+          // 🐎/🐇/🐢はこの値自体を差し替えるだけで、beatInterval や各音の
+          // 長さ・間隔には触れず、4音全体の位置だけを前後に動かす。
+          const presetOffset = TEMPO_SYNC_OFFSET_SECONDS[settings.chimeTempo] ?? TEMPO_SYNC_OFFSET_SECONDS.normal;
+          // 🪄は選択中プリセットとは独立した追加補正。プリセットの値そのものは
+          // 書き換えず、単純加算のみで「プリセット + 🪄」の最終値を求める。
+          const syncOffset = presetOffset + (settings.magicEnabled ? MAGIC_OFFSET_SECONDS : 0);
+          const firstToneTime = boundaryAudioTime - (beatInterval * 3) - syncOffset;
+          scheduleToneAt(ctx, firstToneTime,                    880, 0.10);
+          scheduleToneAt(ctx, firstToneTime + beatInterval,     880, 0.10);
+          scheduleToneAt(ctx, firstToneTime + beatInterval * 2, 880, 0.10);
+          scheduleToneAt(ctx, firstToneTime + beatInterval * 3, 1760, 0.70);
+        }
+      }
+
+      function cancelScheduledSignal() {
+        for (const node of scheduledSignalNodes) {
+          try { node.osc.stop(); } catch {}
+          try { node.osc.disconnect(); } catch {}
+          try { node.gain.disconnect(); } catch {}
+        }
+        scheduledSignalNodes = [];
+        scheduledSignalBoundary = null;
+      }
+
+      function scheduleToneAt(ctx, start, freq, duration) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const peak = Math.max(0.0002, 0.11 * (settings.volume / 100));
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(peak, start + 0.008);
+        gain.gain.setValueAtTime(peak, start + Math.max(0.016, duration - 0.025));
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + duration + 0.02);
+
+        scheduledSignalNodes.push({osc, gain});
+        osc.addEventListener('ended', () => {
+          scheduledSignalNodes = scheduledSignalNodes.filter(n => n.osc !== osc);
+        }, {once:true});
+      }
+
+      function ensureAudioContext() {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return null;
+        if (!audioCtx) audioCtx = new Ctx();
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(() => {});
+        }
+        return audioCtx;
+      }
+
+      function showToast(message) {
+        el.toast.textContent = message;
+        el.toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.toast.classList.remove('show'), 1700);
+      }
+
+      // ==== 画面自動消灯防止（Wake Lock） ====
+      // HTTPS / http://localhost 等の secure context では Screen Wake Lock API を使用。
+      // file:// など secure context が使えない環境では API 自体が存在しないため、
+      // 代わりに「無音・非表示の動画をループ再生する」フォールバック（NoSleep方式）で
+      // 補助を試みる。ただし、この動画方式は Chrome 側の仕様変更により、
+      // 少なくとも現行の Android Chrome では画面消灯を防ぐ効果がないことが
+      // 開発元でも確認されている（詳細はチャット回答を参照）。
+      // そのため file:// 環境では完全な自動消灯防止を保証できない点に留意。
+      // どちらの方法も失敗した場合は、エラー表示などは出さず静かに無効のままにする。
+      const wakeLockApiSupported = 'wakeLock' in navigator;
+      let wakeLockSentinel = null;
+      let noSleepVideo = null;
+      // wakeDesired: ユーザーが💡をONにしたい状態かどうか（＝UI表示の元）。
+      // wakeActive: 現在「実際に」ロック（またはフォールバック動画）が有効かどうか。
+      // 取得に失敗しても静かに諦める仕様のため、この2つは必ずしも一致しない。
+      // wakeActive は制御フローの判定には使わず、状態の可視化・デバッグ用に保持する
+      // （UI表示はこれまでどおり wakeDesired に基づくため、見た目は変わらない）。
+      let wakeDesired = false;
+      let wakeActive = false;
+      // 連打などで acquire/release が入れ替わって競合した場合に、
+      // 「自分より新しい操作が来ていたら結果を握りつぶす」ためのトークン。
+      let wakeRequestToken = 0;
+
+      function loadWakeSetting() {
+        try {
+          return localStorage.getItem(WAKE_STORAGE_KEY) === '1';
+        } catch {
+          return false;
+        }
+      }
+
+      function saveWakeSetting(value) {
+        try {
+          localStorage.setItem(WAKE_STORAGE_KEY, value ? '1' : '0');
+        } catch {}
+      }
+
+      function createNoSleepVideo() {
+        if (noSleepVideo) return noSleepVideo;
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = 2;
+          canvas.height = 2;
+          const ctx2d = canvas.getContext('2d');
+          if (ctx2d) ctx2d.fillRect(0, 0, 2, 2);
+          if (!canvas.captureStream) return null;
+          const stream = canvas.captureStream(1);
+          if (!stream) return null;
+
+          const video = document.createElement('video');
+          video.muted = true;
+          video.setAttribute('muted', '');
+          video.setAttribute('playsinline', '');
+          video.setAttribute('webkit-playsinline', '');
+          video.setAttribute('aria-hidden', 'true');
+          video.loop = true;
+          video.style.position = 'fixed';
+          video.style.left = '0';
+          video.style.bottom = '0';
+          video.style.width = '1px';
+          video.style.height = '1px';
+          video.style.opacity = '0';
+          video.style.pointerEvents = 'none';
+          video.srcObject = stream;
+          document.body.appendChild(video);
+          noSleepVideo = video;
+          return video;
+        } catch {
+          return null;
+        }
+      }
+
+      async function acquireWakeLock() {
+        if (wakeLockApiSupported) {
+          try {
+            wakeLockSentinel = await navigator.wakeLock.request('screen');
+            wakeActive = true;
+            // 'release' はブラウザ側の都合（バッテリー低下等）で自発的に
+            // ロックが失われた場合の検知用。releaseWakeLock() 側でも
+            // 明示的に null を代入しているが、二重に実行されても実害はない。
+            wakeLockSentinel.addEventListener('release', () => {
+              wakeLockSentinel = null;
+              wakeActive = false;
+            }, {once:true});
+            return true;
+          } catch {
+            wakeLockSentinel = null;
+            // secure context ではない等の理由で失敗した場合は、
+            // 何もエラー表示せずフォールバックへ進む。
+          }
+        }
+
+        const video = createNoSleepVideo();
+        if (!video) return false;
+        try {
+          await video.play();
+          wakeActive = true;
+          return true;
+        } catch {
+          // 自動再生ポリシー等で失敗した場合も、静かに諦める。
+          return false;
+        }
+      }
+
+      async function releaseWakeLock() {
+        if (wakeLockSentinel) {
+          try { await wakeLockSentinel.release(); } catch {}
+          wakeLockSentinel = null;
+        }
+        if (noSleepVideo) {
+          try { noSleepVideo.pause(); } catch {}
+        }
+        wakeActive = false;
+      }
+
+      async function setWakeDesired(next) {
+        const myToken = ++wakeRequestToken;
+        wakeDesired = next;
+        saveWakeSetting(next);
+        el.wakeToggle.classList.toggle('on', next);
+        el.wakeToggle.setAttribute('aria-pressed', String(next));
+
+        if (next) {
+          await acquireWakeLock();
+          // 失敗しても静かに無効のまま（トースト等は出さない）。
+          if (myToken !== wakeRequestToken) {
+            // 待っている間に別の操作で状態が変わっていた場合は、
+            // 自分の取得結果を後始末する（意図とズレたロック保持を防ぐ）。
+            await releaseWakeLock();
+          }
+        } else {
+          await releaseWakeLock();
+        }
+      }
+
+      el.wakeToggle.addEventListener('click', () => {
+        setWakeDesired(!wakeDesired).catch(() => {});
+      });
+
+      // 前回のON/OFF状態を復元。取得に失敗しても何も表示せず、
+      // アイコンをタップした時に改めて取得を試みればよい。
+      wakeDesired = loadWakeSetting();
+      if (wakeDesired) {
+        el.wakeToggle.classList.add('on');
+        el.wakeToggle.setAttribute('aria-pressed', 'true');
+        acquireWakeLock().catch(() => {});
+      }
+
+      [el.cycleMinutes, el.baseMinute, el.aggregateSeconds].forEach(input => {
+        input.addEventListener('change', readSettingsFromUI);
+        input.addEventListener('blur', readSettingsFromUI);
+      });
+
+      el.soundToggle.addEventListener('change', () => {
+        readSettingsFromUI();
+        if (settings.soundEnabled) {
+          ensureAudioContext();
+          showToast('時報をONにしました');
+        } else {
+          showToast('時報をOFFにしました');
+        }
+      });
+
+      el.volume.addEventListener('input', () => {
+        cancelScheduledSignal();
+        settings.volume = clampInt(el.volume.value, 0, 100, settings.volume);
+        el.volumeValue.textContent = settings.volume;
+        saveSettings();
+        lastSecondStamp = -1;
+        updateClock(true);
+      });
+
+      el.tempoButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tempo = btn.dataset.tempo;
+          if (tempo === settings.chimeTempo) return;
+          cancelScheduledSignal();
+          settings.chimeTempo = tempo;
+          applySettingsToUI();
+          saveSettings();
+          lastSecondStamp = -1;
+          updateClock(true);
+        });
+      });
+
+      el.magicToggle.addEventListener('change', () => {
+        // 🐎🐇🐈🐢の選択とは独立したON/OFF切り替え。
+        cancelScheduledSignal();
+        settings.magicEnabled = el.magicToggle.checked;
+        applySettingsToUI();
+        saveSettings();
+        lastSecondStamp = -1;
+        updateClock(true);
+      });
+
+
+      el.resetSettings.addEventListener('click', () => {
+        cancelScheduledSignal();
+        settings = {...DEFAULTS};
+        applySettingsToUI();
+        saveSettings();
+        updateClock(true);
+        showToast('初期設定に戻しました');
+      });
+
+      // 非表示→再表示に戻ったタイミングでの処理をここに集約する。
+      // 1) 画面消灯防止：ONにしていた場合、ネイティブAPIは非表示中に
+      //    自動解除されるため、静かに再取得を試みる。
+      // 2) 時計：非表示中に生じたズレを、表示再開時に一括で解消する。
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) return;
+
+        if (wakeDesired) {
+          acquireWakeLock().catch(() => {});
+        }
+
+        cancelScheduledSignal();
+        lastSecondStamp = -1;
+        updateClock(true);
+      });
+
+      applySettingsToUI();
+      updateClock(true);
+
+      // 画面描画そのものに同期して時計を更新する。
+      // setInterval(100ms) の巡回ズレを避け、秒表示の切り替わりをできるだけ安定させる。
+      function animationLoop() {
+        updateClock(false);
+        requestAnimationFrame(animationLoop);
+      }
+      requestAnimationFrame(animationLoop);
+    })();
+  </script>
+</body>
+</html>
